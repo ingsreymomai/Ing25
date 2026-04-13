@@ -1,0 +1,7 @@
+{
+  "name": "English Program Ingsreymom25",
+  "description": "A high-performance neural-powered reading and vocabulary test generation system for advanced educators.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
