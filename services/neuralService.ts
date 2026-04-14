@@ -126,21 +126,29 @@ export const callNeuralEngine = async (
         });
       } catch (error: any) {
         // Parse error message if it's a JSON string
-        let errorMsg = error.message;
+        let errorMsg = error.message || "Unknown Error";
         try {
-          if (errorMsg && errorMsg.startsWith('{')) {
-            const parsed = JSON.parse(errorMsg);
-            errorMsg = parsed.error?.message || errorMsg;
+          const trimmedMsg = errorMsg.trim();
+          if (trimmedMsg.startsWith('{')) {
+            const parsed = JSON.parse(trimmedMsg);
+            errorMsg = parsed.error?.message || parsed.message || errorMsg;
           }
-        } catch (e) {}
+        } catch (e) {
+          // If parsing fails, keep original message
+        }
 
         // If Quota/404/403 Error and we have more keys, try next key
         if (isQuotaError(error) && i < availableKeys.length - 1) {
-          console.warn(`Gemini Key #${i + 1} failed (${errorMsg}). Rotating to next key...`);
+          console.warn(`Gemini Key #${i + 1}/${availableKeys.length} failed: ${errorMsg}. Rotating...`);
           continue; 
         }
-        // If it's the last key or not a quota error, show the specific error
-        return { text: `<div class="p-6 bg-red-50 text-red-600 rounded-xl border border-red-200"><strong>Neural Error:</strong> ${errorMsg || JSON.stringify(error)}</div>` };
+
+        // If it's the last key, provide a more helpful summary
+        const finalMsg = availableKeys.length > 1 
+          ? `All ${availableKeys.length} keys failed. Last error: ${errorMsg}`
+          : errorMsg;
+
+        return { text: `<div class="p-6 bg-red-50 text-red-600 rounded-xl border border-red-200"><strong>Neural Error:</strong> ${finalMsg}</div>` };
       }
     }
     
