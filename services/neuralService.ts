@@ -127,7 +127,7 @@ export const callNeuralEngine = async (
           continue; 
         }
         // If it's the last key or not a quota error, show the specific error
-        return { text: `Error: ${error.message}` };
+        return { text: `<div class="p-6 bg-red-50 text-red-600 rounded-xl border border-red-200"><strong>Neural Error:</strong> ${error.message}</div>` };
       }
     }
   }
@@ -173,7 +173,7 @@ export const callNeuralEngine = async (
         thought: `External synthesis via ${engine}.` 
     };
   }).catch((error: any) => ({ 
-      text: `Error: ${error.message}` 
+      text: `<div class="p-6 bg-red-50 text-red-600 border border-red-200 rounded-xl"><strong>${engine} Error:</strong> ${error.message}</div>` 
   }));
 };
 
