@@ -102,7 +102,12 @@ export const callNeuralEngine = async (
     const availableKeys = getGeminiKeys(userKeys[engine]);
 
     if (availableKeys.length === 0) {
-        return { text: `Error: No Gemini API Keys found. Please add VITE_GEMINI_API_KEYS to your Vercel Environment Variables or provide a key in settings.` };
+      return { 
+        text: `<div class="p-6 bg-orange-50 text-orange-700 border border-orange-200 rounded-xl">
+                <strong>Configuration Required:</strong> No Gemini API Keys found. 
+                Please add <code>VITE_GEMINI_API_KEYS</code> to your Vercel Environment Variables.
+               </div>` 
+      };
     }
 
     let lastError: any = null;
@@ -204,15 +209,17 @@ export const callNeuralEngine = async (
             }
             // If it's the last key or not a quota error, return the specific error
             if (i === availableKeys.length - 1) {
-                return { text: `Error: ${error.message || "Synthesis failed"}` };
+                return { text: `<div class="p-6 bg-red-50 text-red-600 rounded-xl border border-red-200"><strong>Neural Error:</strong> ${error.message}</div>` };
             }
         }
     }
-    return { text: `Error: ${lastError?.message || "Synthesis failed"}` };
+    return { text: `<div class="p-6 bg-red-50 text-red-600 rounded-xl border border-red-200"><strong>Neural Error:</strong> ${lastError?.message || "Synthesis failed"}</div>` };
   }
 
   const userKey = userKeys[engine];
-  if (!userKey) return { text: `Error: Key required for ${engine}` };
+  if (!userKey) {
+      return { text: `<div class="p-6 bg-orange-50 text-orange-600 border border-orange-200 rounded-xl">API Key required for ${engine} in Settings.</div>` };
+  }
 
   return withRetry(async () => {
     let endpoint = "";
@@ -230,9 +237,16 @@ export const callNeuralEngine = async (
       })
     });
 
+    if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error?.message || "External API call failed");
+    }
+
     const data = await response.json();
     return { text: data.choices[0].message.content, thought: `External synthesis via ${engine}.` };
-  }).catch((error: any) => ({ text: `Error: ${error.message}` }));
+  }).catch((error: any) => ({ 
+      text: `<div class="p-6 bg-red-50 text-red-600 border border-red-200 rounded-xl"><strong>${engine} Error:</strong> ${error.message}</div>` 
+  }));
 };
 
 // Fixed initialization and property access for generateNeuralOutline.
