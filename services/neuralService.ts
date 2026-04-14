@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, GenerateContentResponse, Type } from "@google/genai";
 import { NeuralEngine, QuickSource, OutlineItem, ExternalKeys } from "../types";
 
@@ -36,7 +37,11 @@ const getGeminiKeys = (userKey?: string): string[] => {
 
 function isQuotaError(error: any): boolean {
     const msg = error?.message?.toLowerCase() || "";
-    return msg.includes("quota") || msg.includes("429") || msg.includes("resource_exhausted") || msg.includes("limit");
+    const code = error?.code || error?.status || 0;
+    return msg.includes("quota") || msg.includes("429") || msg.includes("resource_exhausted") || 
+           msg.includes("limit") || msg.includes("503") || msg.includes("unavailable") || 
+           msg.includes("high demand") || msg.includes("403") || msg.includes("denied") ||
+           msg.includes("404") || msg.includes("not found") || code === 404 || code === 403 || code === 429 || code === 503;
 }
 
 const withRetry = async <T>(
@@ -46,7 +51,10 @@ const withRetry = async <T>(
 ): Promise<T> => {
   try {
     return await fn();
-  } catch (error) {
+  } catch (error: any) {
+    if (isQuotaError(error)) {
+        throw error;
+    }
     if (retries <= 0) throw error;
     await new Promise(resolve => setTimeout(resolve, delay));
     return withRetry(fn, retries - 1, delay * 2);
@@ -90,8 +98,18 @@ export const callNeuralEngine = async (
             parts.push({ inlineData: { data: file.data, mimeType: file.mimeType } });
           }
 
+          let modelName = engine as string;
+          // Map to standard free Gemini models that work with public API keys
+          if (modelName.includes('flash-lite') || modelName.includes('flash')) {
+              modelName = 'gemini-1.5-flash'; 
+          } else if (modelName.includes('pro')) {
+              modelName = 'gemini-1.5-pro';
+          } else {
+              modelName = 'gemini-1.5-flash'; // Fallback
+          }
+
           const response: GenerateContentResponse = await ai.models.generateContent({
-            model: engine, // This passes the exact string (e.g. "gemini-3.1-flash-lite-preview")
+            model: modelName,
             contents: { parts },
             config: {
               systemInstruction,
@@ -103,19 +121,31 @@ export const callNeuralEngine = async (
 
           return {
             text: response.text || "No content generated.",
-            thought: `Neural synthesis complete via ${engine} (Key #${i + 1}/${availableKeys.length})`
+            thought: `Neural synthesis complete via ${modelName} (Key #${i + 1}/${availableKeys.length})`
           };
         });
       } catch (error: any) {
-        // If Quota Error and we have more keys, try next key
+        // Parse error message if it's a JSON string
+        let errorMsg = error.message;
+        try {
+          if (errorMsg && errorMsg.startsWith('{')) {
+            const parsed = JSON.parse(errorMsg);
+            errorMsg = parsed.error?.message || errorMsg;
+          }
+        } catch (e) {}
+
+        // If Quota/404/403 Error and we have more keys, try next key
         if (isQuotaError(error) && i < availableKeys.length - 1) {
-          console.warn(`Gemini Key #${i + 1} exhausted (Quota). Rotating to next key...`);
+          console.warn(`Gemini Key #${i + 1} failed (${errorMsg}). Rotating to next key...`);
           continue; 
         }
         // If it's the last key or not a quota error, show the specific error
-        return { text: `<div class="p-6 bg-red-50 text-red-600 rounded-xl border border-red-200"><strong>Neural Error:</strong> ${error.message}</div>` };
+        return { text: `<div class="p-6 bg-red-50 text-red-600 rounded-xl border border-red-200"><strong>Neural Error:</strong> ${errorMsg || JSON.stringify(error)}</div>` };
       }
     }
+    
+    // Fallback if the loop finishes without returning (shouldn't happen, but just in case)
+    return { text: `<div class="p-6 bg-red-50 text-red-600 rounded-xl border border-red-200"><strong>Neural Error:</strong> All available API keys failed. Please check your keys and try again.</div>` };
   }
 
   // ==========================================
