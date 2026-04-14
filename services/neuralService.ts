@@ -37,7 +37,11 @@ const getGeminiKeys = (userKey?: string): string[] => {
 
 function isQuotaError(error: any): boolean {
     const msg = error?.message?.toLowerCase() || "";
-    return msg.includes("quota") || msg.includes("429") || msg.includes("resource_exhausted") || msg.includes("limit") || msg.includes("503") || msg.includes("unavailable") || msg.includes("high demand") || msg.includes("403") || msg.includes("denied");
+    const code = error?.code || error?.status || 0;
+    return msg.includes("quota") || msg.includes("429") || msg.includes("resource_exhausted") || 
+           msg.includes("limit") || msg.includes("503") || msg.includes("unavailable") || 
+           msg.includes("high demand") || msg.includes("403") || msg.includes("denied") ||
+           msg.includes("404") || msg.includes("not found") || code === 404 || code === 403 || code === 429 || code === 503;
 }
 
 const withRetry = async <T>(
@@ -97,37 +101,63 @@ export const callNeuralEngine = async (
           let modelName = engine as string;
           // Map to standard free Gemini models that work with public API keys
           if (modelName.includes('flash-lite') || modelName.includes('flash')) {
-              modelName = 'gemini-1.5-flash';
+              modelName = 'gemini-1.5-flash'; 
           } else if (modelName.includes('pro')) {
               modelName = 'gemini-1.5-pro';
           } else {
               modelName = 'gemini-1.5-flash'; // Fallback
           }
 
-          const response: GenerateContentResponse = await ai.models.generateContent({
-            model: modelName,
-            contents: { parts },
-            config: {
-              systemInstruction,
-              temperature: 0.7,
-              topP: 0.95,
-              topK: 64
-            },
-          });
+          try {
+            const response: GenerateContentResponse = await ai.models.generateContent({
+              model: modelName,
+              contents: { parts },
+              config: {
+                systemInstruction,
+                temperature: 0.7,
+                topP: 0.95,
+                topK: 64
+              },
+            });
 
-          return {
-            text: response.text || "No content generated.",
-            thought: `Neural synthesis complete via ${modelName} (Key #${i + 1}/${availableKeys.length})`
-          };
+            return {
+              text: response.text || "No content generated.",
+              thought: `Neural synthesis complete via ${modelName} (Key #${i + 1}/${availableKeys.length})`
+            };
+          } catch (innerError: any) {
+            // If 404, try one more time with 2.0-flash before giving up on this key
+            if (innerError.message?.includes("404") || innerError.message?.includes("not found")) {
+              console.warn(`Model ${modelName} not found. Trying gemini-2.0-flash fallback...`);
+              const fallbackResponse: GenerateContentResponse = await ai.models.generateContent({
+                model: 'gemini-2.0-flash',
+                contents: { parts },
+                config: { systemInstruction, temperature: 0.7 }
+              });
+              return {
+                text: fallbackResponse.text || "No content generated.",
+                thought: `Neural synthesis complete via gemini-2.0-flash (Fallback) (Key #${i + 1}/${availableKeys.length})`
+              };
+            }
+            throw innerError;
+          }
         });
       } catch (error: any) {
-        // If Quota Error and we have more keys, try next key
+        // Parse error message if it's a JSON string
+        let errorMsg = error.message;
+        try {
+          if (errorMsg && errorMsg.startsWith('{')) {
+            const parsed = JSON.parse(errorMsg);
+            errorMsg = parsed.error?.message || errorMsg;
+          }
+        } catch (e) {}
+
+        // If Quota/404/403 Error and we have more keys, try next key
         if (isQuotaError(error) && i < availableKeys.length - 1) {
-          console.warn(`Gemini Key #${i + 1} exhausted (Quota/503/403). Rotating to next key...`);
+          console.warn(`Gemini Key #${i + 1} failed (${errorMsg}). Rotating to next key...`);
           continue; 
         }
         // If it's the last key or not a quota error, show the specific error
-        return { text: `<div class="p-6 bg-red-50 text-red-600 rounded-xl border border-red-200"><strong>Neural Error:</strong> ${error.message || JSON.stringify(error)}</div>` };
+        return { text: `<div class="p-6 bg-red-50 text-red-600 rounded-xl border border-red-200"><strong>Neural Error:</strong> ${errorMsg || JSON.stringify(error)}</div>` };
       }
     }
     
@@ -191,36 +221,51 @@ export const generateNeuralOutline = async (
   for (let i = 0; i < availableKeys.length; i++) {
     try {
       const ai = new GoogleGenAI({ apiKey: availableKeys[i] });
-      const response = await ai.models.generateContent({
-        model: 'gemini-1.5-flash', // Outline is light, always use flash
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                title: { type: Type.STRING },
-                children: {
-                  type: Type.ARRAY,
-                  items: {
-                    type: Type.OBJECT,
-                    properties: {
-                      title: { type: Type.STRING },
-                      children: { 
-                          type: Type.ARRAY, 
-                          items: { type: Type.OBJECT, properties: { title: { type: Type.STRING } } } 
+      
+      let response;
+      try {
+        response = await ai.models.generateContent({
+          model: 'gemini-1.5-flash', // Outline is light, always use flash
+          contents: prompt,
+          config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  title: { type: Type.STRING },
+                  children: {
+                    type: Type.ARRAY,
+                    items: {
+                      type: Type.OBJECT,
+                      properties: {
+                        title: { type: Type.STRING },
+                        children: { 
+                            type: Type.ARRAY, 
+                            items: { type: Type.OBJECT, properties: { title: { type: Type.STRING } } } 
+                        }
                       }
                     }
                   }
-                }
-              },
-              required: ["title"]
+                },
+                required: ["title"]
+              }
             }
           }
+        });
+      } catch (innerError: any) {
+        if (innerError.message?.includes("404") || innerError.message?.includes("not found")) {
+          console.warn("Outline model not found. Trying gemini-2.0-flash fallback...");
+          response = await ai.models.generateContent({
+            model: 'gemini-2.0-flash',
+            contents: prompt,
+            config: { responseMimeType: "application/json" }
+          });
+        } else {
+          throw innerError;
         }
-      });
+      }
 
       const jsonStr = response.text || "[]";
       const data = JSON.parse(jsonStr);
