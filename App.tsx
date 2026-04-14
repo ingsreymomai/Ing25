@@ -2516,7 +2516,7 @@ ${componentLogic}
                       )}
 
                       {generationError && (
-                        <div className="absolute inset-0 bg-white/95 backdrop-blur-md flex flex-col items-center justify-center z-30 p-10">
+                        <div className="fixed inset-0 bg-white/95 backdrop-blur-md flex flex-col items-center justify-center z-[9999] p-10">
                           <div className="h-16 w-16 bg-red-50 rounded-full flex items-center justify-center text-red-600 mb-6 shadow-xl shadow-red-600/10">
                             <i className="fa-solid fa-triangle-exclamation text-2xl"></i>
                           </div>
@@ -5524,7 +5524,7 @@ ${componentLogic}
       {showSettings && (
         <div className={`fixed inset-0 z-[250] bg-slate-950/80 backdrop-blur-2xl flex items-center justify-center ${isSettingsFullScreen ? 'p-0' : 'p-4'}`}>
           <div className={`bg-[#f8fafc] bg-[radial-gradient(circle_at_top_right,rgba(234,88,12,0.03),transparent_40%),radial-gradient(circle_at_bottom_left,rgba(37,99,235,0.03),transparent_40%)] overflow-hidden shadow-2xl flex flex-col border border-white/50 transition-all duration-500 ${isSettingsFullScreen ? 'w-full h-full rounded-none' : 'rounded-[48px] lg:rounded-[64px] w-full max-w-4xl h-full max-h-[75vh]'}`}>
-             <div className={`${isSettingsFullScreen && settingsTab === 'FORMAT_DESIGN' ? 'hidden' : 'p-8 lg:p-12 pb-4'} flex justify-between items-center`}>
+             <div className={`${settingsTab === 'FORMAT_DESIGN' ? 'hidden' : 'p-8 lg:p-12 pb-4'} flex justify-between items-center`}>
                <div className="flex items-center gap-4">
                  <div className="h-4 w-4 bg-orange-600 rounded-full animate-pulse"></div>
                  <h2 className="text-[12px] font-black uppercase text-slate-900 tracking-widest">Workspace Control Node</h2>
@@ -5540,8 +5540,8 @@ ${componentLogic}
                  <button onClick={() => setShowSettings(false)} className="h-10 w-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900"><i className="fa-solid fa-xmark text-xl"></i></button>
                </div>
              </div>
-             <div className={`${isSettingsFullScreen && settingsTab === 'FORMAT_DESIGN' ? 'fixed bottom-4 left-1/2 -translate-x-1/2 z-[300]' : 'px-6 lg:px-12 mb-8'}`}>
-               <div className={`flex bg-slate-100/70 p-1 rounded-[32px] gap-1 overflow-x-auto no-scrollbar shadow-inner ${isSettingsFullScreen && settingsTab === 'FORMAT_DESIGN' ? 'scale-90 origin-bottom opacity-50 hover:opacity-100 transition-opacity backdrop-blur-md bg-white/80 border border-slate-200' : ''}`}>
+             <div className={`${settingsTab === 'FORMAT_DESIGN' ? 'absolute bottom-4 left-1/2 -translate-x-1/2 z-[300]' : 'px-6 lg:px-12 mb-8'}`}>
+               <div className={`flex bg-slate-100/70 p-1 rounded-[32px] gap-1 overflow-x-auto no-scrollbar shadow-inner ${settingsTab === 'FORMAT_DESIGN' ? 'scale-90 origin-bottom opacity-50 hover:opacity-100 transition-opacity backdrop-blur-md bg-white/80 border border-slate-200' : ''}`}>
                  {['COMMAND', 'ACCOUNT', 'ENGINE', 'BACKBONE LOGIC', 'DESIGN', 'FORMAT_DESIGN', 'LOGO'].map(tab => (
                    <button 
                      key={tab} 
@@ -5553,15 +5553,23 @@ ${componentLogic}
                  ))}
                </div>
              </div>
-             {isSettingsFullScreen && settingsTab === 'FORMAT_DESIGN' && (
-               <button 
-                 onClick={() => setShowSettings(false)} 
-                 className="fixed top-4 right-4 z-[300] h-10 w-10 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 shadow-lg"
-               >
-                 <i className="fa-solid fa-xmark text-xl"></i>
-               </button>
+             {settingsTab === 'FORMAT_DESIGN' && (
+               <div className="absolute top-4 right-4 z-[300] flex items-center gap-2">
+                 <button 
+                   onClick={() => setIsSettingsFullScreen(!isSettingsFullScreen)} 
+                   className="h-10 w-10 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 shadow-lg"
+                 >
+                   <i className={`fa-solid ${isSettingsFullScreen ? 'fa-compress' : 'fa-expand'}`}></i>
+                 </button>
+                 <button 
+                   onClick={() => setShowSettings(false)} 
+                   className="h-10 w-10 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 shadow-lg"
+                 >
+                   <i className="fa-solid fa-xmark text-xl"></i>
+                 </button>
+               </div>
              )}
-             <div className={`flex-1 overflow-y-auto ${isSettingsFullScreen && settingsTab === 'FORMAT_DESIGN' ? 'px-2 pb-2' : 'px-6 lg:px-12 pb-12'} space-y-12 no-scrollbar`}>
+             <div className={`flex-1 overflow-y-auto ${settingsTab === 'FORMAT_DESIGN' ? 'px-2 pb-2 pt-16' : 'px-6 lg:px-12 pb-12'} space-y-12 no-scrollbar`}>
                 {settingsTab === 'FORMAT_DESIGN' && (
                   <div className="h-full min-h-[600px] animate-in fade-in slide-in-from-bottom-6">
                     <FormatDesignEditor 
