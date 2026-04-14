@@ -2523,7 +2523,11 @@ ${componentLogic}
                           <h4 className="text-sm font-bold text-slate-800 mb-2">Neural Synthesis Failed</h4>
                           <p className="text-xs text-slate-400 max-w-[280px] leading-relaxed mb-4">The AI engine encountered an issue. This could be due to a complex prompt or temporary service interruption.</p>
                           <div className="bg-red-50 border border-red-100 text-red-600 text-[10px] p-3 rounded-lg max-w-[280px] w-full mb-8 overflow-auto max-h-24 text-left font-mono">
-                            {generationError}
+                            {generationError.includes('<div') ? (
+                              <div dangerouslySetInnerHTML={{ __html: generationError }} />
+                            ) : (
+                              generationError
+                            )}
                           </div>
                           <div className="flex gap-4">
                             <button onClick={() => setGenerationError(null)} className="px-6 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-slate-200 transition-all">Dismiss</button>
