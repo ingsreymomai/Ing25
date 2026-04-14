@@ -37,7 +37,7 @@ const getGeminiKeys = (userKey?: string): string[] => {
 
 function isQuotaError(error: any): boolean {
     const msg = error?.message?.toLowerCase() || "";
-    return msg.includes("quota") || msg.includes("429") || msg.includes("resource_exhausted") || msg.includes("limit") || msg.includes("503") || msg.includes("unavailable") || msg.includes("high demand");
+    return msg.includes("quota") || msg.includes("429") || msg.includes("resource_exhausted") || msg.includes("limit") || msg.includes("503") || msg.includes("unavailable") || msg.includes("high demand") || msg.includes("403") || msg.includes("denied");
 }
 
 const withRetry = async <T>(
