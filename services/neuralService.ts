@@ -95,17 +95,17 @@ export const callNeuralEngine = async (
           }
 
           let modelName = engine as string;
-          // Map legacy and internal names to latest Gemini 3 models as per skill guidelines
-          if (modelName.includes('flash-lite') || modelName === 'gemini-1.5-flash-lite') {
-              modelName = 'gemini-3.1-flash-lite-preview';
-          } else if (modelName.includes('flash') || modelName === 'gemini-1.5-flash') {
-              modelName = 'gemini-3-flash-preview';
-          } else if (modelName.includes('pro') || modelName === 'gemini-1.5-pro') {
-              modelName = 'gemini-3.1-pro-preview';
+          // Map to standard free Gemini models that work with public API keys
+          if (modelName.includes('flash-lite') || modelName.includes('flash')) {
+              modelName = 'gemini-1.5-flash';
+          } else if (modelName.includes('pro')) {
+              modelName = 'gemini-1.5-pro';
+          } else {
+              modelName = 'gemini-1.5-flash'; // Fallback
           }
 
           const response: GenerateContentResponse = await ai.models.generateContent({
-            model: modelName, // This passes the exact string (e.g. "gemini-3.1-flash-lite-preview")
+            model: modelName,
             contents: { parts },
             config: {
               systemInstruction,
@@ -123,13 +123,16 @@ export const callNeuralEngine = async (
       } catch (error: any) {
         // If Quota Error and we have more keys, try next key
         if (isQuotaError(error) && i < availableKeys.length - 1) {
-          console.warn(`Gemini Key #${i + 1} exhausted (Quota/503). Rotating to next key...`);
+          console.warn(`Gemini Key #${i + 1} exhausted (Quota/503/403). Rotating to next key...`);
           continue; 
         }
         // If it's the last key or not a quota error, show the specific error
-        return { text: `<div class="p-6 bg-red-50 text-red-600 rounded-xl border border-red-200"><strong>Neural Error:</strong> ${error.message}</div>` };
+        return { text: `<div class="p-6 bg-red-50 text-red-600 rounded-xl border border-red-200"><strong>Neural Error:</strong> ${error.message || JSON.stringify(error)}</div>` };
       }
     }
+    
+    // Fallback if the loop finishes without returning (shouldn't happen, but just in case)
+    return { text: `<div class="p-6 bg-red-50 text-red-600 rounded-xl border border-red-200"><strong>Neural Error:</strong> All available API keys failed. Please check your keys and try again.</div>` };
   }
 
   // ==========================================
@@ -189,7 +192,7 @@ export const generateNeuralOutline = async (
     try {
       const ai = new GoogleGenAI({ apiKey: availableKeys[i] });
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview', // Outline is light, always use flash
+        model: 'gemini-1.5-flash', // Outline is light, always use flash
         contents: prompt,
         config: {
           responseMimeType: "application/json",
