@@ -62,6 +62,11 @@ const withRetry = async <T>(
       throw new Error("Gemini API Model Not Found: The selected engine is not available. Try switching to a different Flash or Pro model in settings.");
     }
 
+    // If it's a quota or 503 error, don't retry locally, throw immediately to trigger key rotation
+    if (isQuotaError(error)) {
+        throw error;
+    }
+
     if (retries <= 0) throw error;
     
     console.warn(`[Neural] Retrying in ${delay}ms... (${retries} attempts left). Error: ${error.message}`);
@@ -135,6 +140,9 @@ export const callNeuralEngine = async (
 
                     if (response.text) return { text: response.text, thought: `Neural synthesis complete via ${modelName} node.` };
                 } catch (sdkError: any) {
+                    if (isQuotaError(sdkError)) {
+                        throw sdkError; // Bubble up immediately for key rotation
+                    }
                     console.warn("[Neural] SDK failed, trying REST fallback...", sdkError.message);
                     
                     // REST Fallback with v1beta and v1 support
@@ -171,12 +179,16 @@ export const callNeuralEngine = async (
                                 const errorData = await fetchResponse.json().catch(() => ({}));
                                 console.warn(`[Neural] REST ${version} error:`, fetchResponse.status, errorData);
                                 if (fetchResponse.status === 429 || fetchResponse.status === 503) {
-                                    throw new Error(`REST API Error: ${fetchResponse.status} ${errorData.error?.message || ''}`);
+                                    const err = new Error(`REST API Error: ${fetchResponse.status} ${errorData.error?.message || ''}`);
+                                    (err as any).status = fetchResponse.status;
+                                    throw err;
                                 }
                             }
-                        } catch (e) {
+                        } catch (e: any) {
                             console.warn(`[Neural] REST ${version} failed:`, e);
-                            throw e; // Bubble up to outer try/catch
+                            if (isQuotaError(e) || e.status === 429 || e.status === 503) {
+                                throw e; // Bubble up to outer try/catch
+                            }
                         }
                     }
                     throw sdkError;
