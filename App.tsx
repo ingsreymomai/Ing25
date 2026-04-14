@@ -1728,6 +1728,10 @@ ${componentLogic}
       // 1. Call the AI Brain
       const result = await callNeuralEngine(activeEngine, finalLogic, protocolsPrompt, sourceMaterial, externalKeys);
       
+      if (!result || !result.text) {
+        throw new Error("The AI engine returned an empty response. Please try again or switch to a different engine.");
+      }
+
       if (result.text.includes('Error:')) {
         setGenerationError(result.text);
         setIsGenerating(false);
@@ -5536,13 +5540,13 @@ ${componentLogic}
                  <button onClick={() => setShowSettings(false)} className="h-10 w-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900"><i className="fa-solid fa-xmark text-xl"></i></button>
                </div>
              </div>
-             <div className={`${isSettingsFullScreen && settingsTab === 'FORMAT_DESIGN' ? 'fixed top-2 left-4 z-[300]' : 'px-6 lg:px-12 mb-8'}`}>
-               <div className={`flex bg-slate-100/70 p-1 rounded-[32px] gap-1 overflow-x-auto no-scrollbar shadow-inner ${isSettingsFullScreen && settingsTab === 'FORMAT_DESIGN' ? 'scale-75 origin-left opacity-50 hover:opacity-100 transition-opacity' : ''}`}>
+             <div className={`${isSettingsFullScreen && settingsTab === 'FORMAT_DESIGN' ? 'fixed bottom-4 left-1/2 -translate-x-1/2 z-[300]' : 'px-6 lg:px-12 mb-8'}`}>
+               <div className={`flex bg-slate-100/70 p-1 rounded-[32px] gap-1 overflow-x-auto no-scrollbar shadow-inner ${isSettingsFullScreen && settingsTab === 'FORMAT_DESIGN' ? 'scale-90 origin-bottom opacity-50 hover:opacity-100 transition-opacity backdrop-blur-md bg-white/80 border border-slate-200' : ''}`}>
                  {['COMMAND', 'ACCOUNT', 'ENGINE', 'BACKBONE LOGIC', 'DESIGN', 'FORMAT_DESIGN', 'LOGO'].map(tab => (
                    <button 
                      key={tab} 
                      onClick={() => setSettingsTab(tab as SettingsTab)} 
-                     className={`px-4 lg:px-6 py-2 rounded-[28px] text-[9px] font-black uppercase tracking-widest transition-all ${settingsTab === tab ? 'bg-orange-600 text-white shadow-xl' : 'text-slate-400 hover:text-slate-600'}`}
+                     className={`px-4 lg:px-6 py-2 rounded-[28px] text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${settingsTab === tab ? 'bg-orange-600 text-white shadow-xl' : 'text-slate-400 hover:text-slate-600'}`}
                    >
                      {tab === 'FORMAT_DESIGN' ? 'DESIGN TEST FORMAT' : tab.replace('_', ' ')}
                    </button>
