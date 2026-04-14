@@ -1771,12 +1771,9 @@ ${componentLogic}
 
       // 4. SEND TO THE CLOUD (The Magic Step!)
       if (auth.currentUser) {
-        try {
-             await setDoc(doc(db, 'history', newTestItem.id), newTestItem);
-             console.log("✅☁️ Test successfully saved to the Firebase Cloud Notebook!");
-        } catch (e) {
-             handleFirestoreError(e, OperationType.WRITE, `history/${newTestItem.id}`);
-        }
+        setDoc(doc(db, 'history', newTestItem.id), newTestItem)
+          .then(() => console.log("✅☁️ Test successfully saved to the Firebase Cloud Notebook!"))
+          .catch(e => console.error("Cloud save failed (this won't stop your test from generating):", e));
       }
     } catch (error: any) {
       console.error("Generation failed:", error);
@@ -2524,7 +2521,10 @@ ${componentLogic}
                             <i className="fa-solid fa-triangle-exclamation text-2xl"></i>
                           </div>
                           <h4 className="text-sm font-bold text-slate-800 mb-2">Neural Synthesis Failed</h4>
-                          <p className="text-xs text-slate-400 max-w-[280px] leading-relaxed mb-8">The AI engine encountered an issue. This could be due to a complex prompt or temporary service interruption.</p>
+                          <p className="text-xs text-slate-400 max-w-[280px] leading-relaxed mb-4">The AI engine encountered an issue. This could be due to a complex prompt or temporary service interruption.</p>
+                          <div className="bg-red-50 border border-red-100 text-red-600 text-[10px] p-3 rounded-lg max-w-[280px] w-full mb-8 overflow-auto max-h-24 text-left font-mono">
+                            {generationError}
+                          </div>
                           <div className="flex gap-4">
                             <button onClick={() => setGenerationError(null)} className="px-6 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-slate-200 transition-all">Dismiss</button>
                             <button onClick={handleGenerate} className="px-6 py-3 bg-orange-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-orange-700 shadow-lg shadow-orange-600/20 transition-all flex items-center gap-2">
