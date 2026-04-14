@@ -106,6 +106,8 @@ export interface BrandSettings {
   logoData?: string;
   activeFont?: string;
   randomizeFont?: boolean;
+  customHeaderText?: string;
+  headerRulerStyle?: number;
 }
 
 export interface UserSession {
@@ -135,4 +137,5 @@ export interface CustomExerciseType {
   name: string;
   category: RuleCategory;
   styleId?: string;
+  uid?: string;
 }

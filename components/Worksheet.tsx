@@ -143,7 +143,7 @@ const Worksheet: React.FC<WorksheetProps> = ({
 
   return (
     <div className="flex-1 overflow-auto p-2 md:p-12 no-scrollbar bg-slate-200/50">
-      <div className="w-full max-w-[210mm] mx-auto pb-64 shadow-2xl worksheet-paper transition-transform duration-300 ease-in-out" style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top center' }}>
+      <div id="worksheet-container" className="w-full max-w-[210mm] mx-auto pb-64 shadow-2xl worksheet-paper transition-transform duration-300 ease-in-out" style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top center' }}>
         <style>{`
           * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
           .prose { 
@@ -223,6 +223,24 @@ const Worksheet: React.FC<WorksheetProps> = ({
           ` : ''}
           ${instructionHeaderStyle === 13 ? `
             .prose .header-row, .prose tr:first-child td[colspan] { border: 3pt solid black !important; color: black !important; text-transform: uppercase !important; font-weight: 900 !important; }
+          ` : ''}
+          ${instructionHeaderStyle === 15 ? `
+            .prose .header-row, .prose tr:first-child td[colspan] { background-color: #581c87 !important; color: white !important; border: 2pt solid #fbbf24 !important; text-align: center !important; }
+          ` : ''}
+          ${instructionHeaderStyle === 16 ? `
+            .prose .header-row, .prose tr:first-child td[colspan] { background-color: #14532d !important; color: white !important; border-radius: 20pt 0 20pt 0 !important; padding-left: 20pt !important; }
+          ` : ''}
+          ${instructionHeaderStyle === 17 ? `
+            .prose .header-row, .prose tr:first-child td[colspan] { background: linear-gradient(90deg, #0ea5e9, #38bdf8) !important; color: white !important; text-align: center !important; }
+          ` : ''}
+          ${instructionHeaderStyle === 18 ? `
+            .prose .header-row, .prose tr:first-child td[colspan] { border: 2pt dotted #64748b !important; color: #475569 !important; background: transparent !important; }
+          ` : ''}
+          ${instructionHeaderStyle === 19 ? `
+            .prose .header-row, .prose tr:first-child td[colspan] { background-color: #ea580c !important; color: white !important; border-bottom: 4pt solid #9a3412 !important; font-weight: 900 !important; }
+          ` : ''}
+          ${instructionHeaderStyle === 20 ? `
+            .prose .header-row, .prose tr:first-child td[colspan] { background: linear-gradient(90deg, #f8fafc 50%, #f1f5f9 50%) !important; background-size: 40px 100% !important; border: 1pt solid #cbd5e1 !important; color: #1e293b !important; text-align: center !important; }
           ` : ''}
           ${instructionHeaderStyle === 14 ? `
             /* Mix Styles - No global override, let AI generate specific styles */
@@ -339,6 +357,29 @@ const Worksheet: React.FC<WorksheetProps> = ({
 
           .design-futuristic { border: 1pt solid #0ea5e9 !important; background-color: #f0f9ff !important; clip-path: polygon(0% 0%, 100% 0%, 100% 95%, 95% 100%, 0% 100%); }
           .design-futuristic .header-row { background-color: #0ea5e9 !important; color: white !important; }
+
+          /* Column/Table Designs 21-30 */
+          .design-col-table-1 { background: #f8fafc; border: 1pt solid #e2e8f0; }
+          .design-col-table-2 { background: #fff7ed; border: 1pt solid #fdba74; }
+          .design-col-table-3 { background: #f0fdf4; border: 1pt solid #86efac; }
+          .design-col-table-4 { background: #eff6ff; border: 1pt solid #93c5fd; }
+          .design-col-table-5 { background: #faf5ff; border: 1pt solid #d8b4fe; }
+          .design-col-table-6 { background: #fff1f2; border: 1pt solid #fda4af; }
+          .design-col-table-7 { background: #fdf2f8; border: 1pt solid #f9a8d4; }
+          .design-col-table-8 { background: #f0f9ff; border: 1pt solid #7dd3fc; }
+          .design-col-table-9 { background: #f5f3ff; border: 1pt solid #c4b5fd; }
+          .design-col-table-10 { background: #ecfdf5; border: 1pt solid #6ee7b7; }
+
+          .design-col-table-1 .professional-table { border: 2pt solid #334155; }
+          .design-col-table-2 .professional-table { border: 2pt solid #c2410c; }
+          .design-col-table-3 .professional-table { border: 2pt solid #15803d; }
+          .design-col-table-4 .professional-table { border: 2pt solid #1d4ed8; }
+          .design-col-table-5 .professional-table { border: 2pt solid #7e22ce; }
+          .design-col-table-6 .professional-table { border: 2pt solid #be123c; }
+          .design-col-table-7 .professional-table { border: 2pt solid #be185d; }
+          .design-col-table-8 .professional-table { border: 2pt solid #0369a1; }
+          .design-col-table-9 .professional-table { border: 2pt solid #5b21b6; }
+          .design-col-table-10 .professional-table { border: 2pt solid #047857; }
           
           .design-elegant { border: 1pt solid #92400e !important; background-color: #fffbeb !important; position: relative; }
           .design-elegant::before { content: ''; position: absolute; inset: 10pt; border: 1pt solid #d97706; pointer-events: none; }

@@ -340,7 +340,7 @@ const FormatDesignEditor: React.FC<FormatDesignEditorProps> = ({ onSave, current
                   onChange={(e) => setSelectedCategory(e.target.value as RuleCategory)}
                   className="text-[8px] font-bold text-slate-400 bg-transparent border-none focus:ring-0 p-0 uppercase cursor-pointer"
                 >
-                  {['General', 'Grammar', 'Vocabulary', 'Reading', 'Mixed', 'Custom', 'mcq', 'tf', 'correct_incorrect', 'vocabulary', 'circle', 'sentence_completion', 'word_box', 'reading_passage', 'matching'].map(cat => (
+                  {['General', 'Grammar', 'Vocabulary', 'Reading', 'Mixed', 'Custom', 'mcq', 'tf', 'correct_incorrect', 'vocabulary', 'circle', 'sentence_completion', 'word_box', 'reading_passage', 'matching', 'cloze', 'double_mcq'].map(cat => (
                     <option key={cat} value={cat}>{cat.replace('_', ' ').toUpperCase()} Category</option>
                   ))}
                 </select>

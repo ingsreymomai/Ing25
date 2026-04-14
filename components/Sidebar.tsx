@@ -34,17 +34,21 @@ interface SidebarProps {
   onPaperDesignChange: (val: number) => void;
   onDesignPaperClick: () => void;
   onPaperStyleClick: () => void;
-  onMCQGridClick: () => void;
-  onInstructionDesignClick: () => void;
   onHeaderFooterDesignClick: () => void;
+  onInstructionDesignClick: () => void;
   onSubjectsClick: () => void;
   onFormatDesignClick: () => void;
+  mcqLayout: 'single' | 'double' | 'quad';
+  onMCQLayoutChange: (val: 'single' | 'double' | 'quad') => void;
   instructionCase: 'uppercase' | 'lowercase' | 'random';
   onInstructionCaseChange: (val: 'uppercase' | 'lowercase' | 'random') => void;
   width?: number;
   onWidthChange?: (width: number) => void;
   side?: 'left' | 'right';
   onSideChange?: (side: 'left' | 'right') => void;
+  user: any;
+  onLogin: () => void;
+  onLogout: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -64,16 +68,20 @@ const Sidebar: React.FC<SidebarProps> = ({
   paperDesign, onPaperDesignChange,
   onDesignPaperClick,
   onPaperStyleClick,
-  onMCQGridClick,
-  onInstructionDesignClick,
   onHeaderFooterDesignClick,
+  onInstructionDesignClick,
   onSubjectsClick,
   onFormatDesignClick,
+  mcqLayout,
+  onMCQLayoutChange,
   instructionCase, onInstructionCaseChange,
   width = 280,
   onWidthChange,
   side = 'left',
-  onSideChange
+  onSideChange,
+  user,
+  onLogin,
+  onLogout
 }) => {
   const [editingHistId, setEditingHistId] = useState<string | null>(null);
   const [tempTitle, setTempTitle] = useState('');
@@ -159,6 +167,41 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
           </div>
 
+          {/* User Profile / Login */}
+          <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+            {user ? (
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 overflow-hidden">
+                  {user.photoURL ? (
+                    <img src={user.photoURL} alt={user.displayName} className="h-8 w-8 rounded-full border border-white shadow-sm" referrerPolicy="no-referrer" />
+                  ) : (
+                    <div className="h-8 w-8 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center font-bold text-xs uppercase">
+                      {user.displayName?.charAt(0) || user.email?.charAt(0)}
+                    </div>
+                  )}
+                  <div className="flex flex-col overflow-hidden">
+                    <span className="text-[10px] font-bold text-slate-700 truncate">{user.displayName}</span>
+                    <span className="text-[8px] text-slate-400 truncate">{user.email}</span>
+                  </div>
+                </div>
+                <button 
+                  onClick={onLogout}
+                  className="h-7 w-7 bg-white text-slate-400 rounded-lg flex items-center justify-center hover:text-rose-600 transition-all shadow-sm"
+                  title="Logout"
+                >
+                  <i className="fa-solid fa-right-from-bracket text-[10px]"></i>
+                </button>
+              </div>
+            ) : (
+              <button 
+                onClick={onLogin}
+                className="w-full py-2 bg-orange-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-orange-700 transition-all shadow-md shadow-orange-200"
+              >
+                <i className="fa-solid fa-user"></i> Login with Google
+              </button>
+            )}
+          </div>
+
         <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
           {['GRAMMAR', 'READING', 'VOCABULARY', 'MIXED'].map(mod => (
             <button
@@ -196,14 +239,6 @@ const Sidebar: React.FC<SidebarProps> = ({
             <i className="fa-solid fa-chevron-right text-purple-400 group-hover:text-purple-600 transition-colors text-[7px]"></i>
           </button>
           <button 
-            onClick={onInstructionDesignClick}
-            className="w-full flex items-center justify-between bg-white p-2 rounded-lg border border-rose-200 hover:bg-rose-100 hover:border-rose-300 transition-colors group shadow-sm"
-          >
-            <span className="text-[8px] font-black text-rose-600 uppercase tracking-widest">Instruction Design</span>
-            <i className="fa-solid fa-chevron-right text-rose-400 group-hover:text-rose-600 transition-colors text-[7px]"></i>
-          </button>
-
-          <button 
             onClick={onFormatDesignClick}
             className="w-full flex items-center justify-between bg-white p-2 rounded-lg border border-orange-200 hover:bg-orange-100 hover:border-orange-300 transition-colors group shadow-sm"
           >
@@ -219,13 +254,24 @@ const Sidebar: React.FC<SidebarProps> = ({
             <i className="fa-solid fa-chevron-right text-amber-400 group-hover:text-amber-600 transition-colors text-[7px]"></i>
           </button>
 
-          <button 
-            onClick={onMCQGridClick}
-            className="w-full flex items-center justify-between bg-white p-2 rounded-lg border border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 transition-colors group shadow-sm"
-          >
-            <span className="text-[8px] font-black text-emerald-600 uppercase tracking-widest">MCQ Grid</span>
-            <i className="fa-solid fa-chevron-right text-emerald-400 group-hover:text-emerald-600 transition-colors text-[7px]"></i>
-          </button>
+          <div className="w-full flex items-center justify-between bg-white p-2 rounded-lg border border-emerald-200 shadow-sm">
+            <span className="text-[8px] font-black text-emerald-600 uppercase tracking-widest">MCQ Lines</span>
+            <div className="flex gap-1">
+              {[
+                { id: 'single', label: 'L1' },
+                { id: 'double', label: 'L2' },
+                { id: 'quad', label: 'L4' }
+              ].map((l) => (
+                <button
+                  key={l.id}
+                  onClick={() => onMCQLayoutChange(l.id as any)}
+                  className={`h-5 px-2 rounded-md text-[7px] font-black transition-all ${mcqLayout === l.id ? 'bg-emerald-600 text-white' : 'bg-slate-50 border border-emerald-100 text-emerald-400 hover:bg-emerald-50'}`}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <button 
             onClick={onPaperStyleClick}
@@ -242,6 +288,8 @@ const Sidebar: React.FC<SidebarProps> = ({
             <span className="text-[8px] font-black text-blue-600 uppercase tracking-widest">Header & Footer Styles</span>
             <i className="fa-solid fa-chevron-right text-blue-400 group-hover:text-blue-600 transition-colors text-[7px]"></i>
           </button>
+
+
         </div>
 
         <div className="flex flex-col gap-2 bg-indigo-50 p-3 rounded-xl border border-indigo-100">
