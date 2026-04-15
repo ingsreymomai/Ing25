@@ -252,7 +252,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             onClick={onInstructionDesignClick}
             className="w-full flex items-center justify-between bg-white p-2 rounded-lg border border-purple-200 hover:bg-purple-100 hover:border-purple-300 transition-colors group shadow-sm"
           >
-            <span className="text-[8px] font-black text-purple-600 uppercase tracking-widest">Exercise Layout</span>
+            <span className="text-[8px] font-black text-purple-600 uppercase tracking-widest">Table/column Styles</span>
             <i className="fa-solid fa-chevron-right text-purple-400 group-hover:text-purple-600 transition-colors text-[7px]"></i>
           </button>
         </div>

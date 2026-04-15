@@ -369,7 +369,6 @@ function App() {
     }
   });
   const [instructionHeaderStyle, setInstructionHeaderStyle] = useState<number>(0); // 0: Default, 1-10: Styles
-  const [defaultColumnCount, setDefaultColumnCount] = useState<number>(1); // 1-6 columns
   const [architectTab, setArchitectTab] = useState<'Grammar' | 'Vocabulary' | 'Reading' | 'Mixed' | 'Generals' | 'Custom'>('Grammar');
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const [mcqLayout, setMcqLayout] = useState<'single' | 'double' | 'quad'>(() => {
@@ -1459,10 +1458,23 @@ ${customHtml}
     const alignments = ['left', 'center', 'right'];
     const randomAlignment = alignments[Math.floor(Math.random() * alignments.length)];
     
-    const headerStyle = `class="header-row", background-color: #334155, color: white, text-align: left, padding-left: 15pt, font-weight: bold`;
+    let headerStyle = `class="header-row", background-color: #dcfce7, color: #064e3b, border-left: 6pt solid #059669, text-align: left, padding-left: 15pt, font-weight: bold`;
+    
+    if (instructionHeaderStyle === 6) {
+      headerStyle += `, border-bottom: 4pt double #334155`;
+    } else if (instructionHeaderStyle === 11) {
+      headerStyle += `, background: linear-gradient(90deg, #1e293b, #475569), color: white`;
+    } else if (instructionHeaderStyle === 12) {
+      headerStyle += `, border: 2pt solid #10b981, color: #065f46, background-color: #ecfdf5`;
+    } else if (instructionHeaderStyle === 13) {
+      headerStyle += `, border: 3pt solid black, background-color: #facc15, color: black`;
+    } else if (instructionHeaderStyle === 14) {
+      headerStyle = `class="header-row", MANDATORY: For each PART (A, B, C, etc.), you MUST use a DIFFERENT visual style for the header row. Mix backgrounds, borders, and colors.`;
+    }
+
     
     const componentLogic = selectedTemps.map((t, idx) => {
-      const overrideCol = columnOverrides[t.id] !== undefined ? columnOverrides[t.id] : (t.columnCount !== undefined ? t.columnCount : defaultColumnCount);
+      const overrideCol = columnOverrides[t.id] !== undefined ? columnOverrides[t.id] : (t.columnCount !== undefined ? t.columnCount : 0);
       const overrideItems = itemCountOverrides[t.id] || 10;
       
       let blueprintStr = '';
@@ -1489,11 +1501,11 @@ ${customHtml}
         blueprintStr = `(DO NOT USE A PRE-ASSIGNED ANSWER KEY. Generate natural, accurate answers for the Teacher Answer Key based on the text.)`;
       }
 
-      const formatInstruction = '';
-      
-      // Use overrideCol if it's > 0, otherwise use defaultColumnCount
-      const effectiveCols = overrideCol > 0 ? overrideCol : defaultColumnCount;
-      const isForcedList = overrideCol === 0 && defaultColumnCount === 1 && ![2, 3, 4].includes(baseLayout);
+      let formatInstruction = '';
+
+      // Use overrideCol if it's > 0, otherwise use baseLayout defaults
+      const effectiveCols = overrideCol > 0 ? overrideCol : ([2, 3, 4].includes(baseLayout) ? 2 : 1);
+      const isForcedList = overrideCol === 0 && ![2, 3, 4].includes(baseLayout);
 
       if (isForcedList) {
         formatInstruction = `(FORMAT: Standard numbered list. ${isPartBackgroundEnabled ? 'MANDATORY: Wrap the entire part in a <div class="..."> with a unique background style class from the PART BACKGROUND PROTOCOL.' : ''} Every numbered item (1., 2., 3., etc.) MUST start on a NEW LINE using an HTML <p> or <br> tag. DO NOT bunch them together in a single paragraph. DO NOT use tables or columns.)`;
@@ -2058,23 +2070,6 @@ ${componentLogic}
                 
                 <div className="flex items-center gap-4">
                   <button 
-                    onClick={() => {
-                      const name = prompt("Enter new exercise type name (e.g., 'Circle the best answer'):");
-                      if (name) {
-                        const id = name.toLowerCase().replace(/\s+/g, '_');
-                        setCustomExerciseTypes(prev => [...prev, { 
-                          id, 
-                          name, 
-                          category: (activeModule.charAt(0).toUpperCase() + activeModule.slice(1).toLowerCase()) as any
-                        }]);
-                      }
-                    }}
-                    className="px-6 lg:px-8 py-3 bg-blue-600 text-white rounded-xl text-[11px] font-bold uppercase tracking-widest flex items-center gap-3 hover:bg-blue-700 transition-all shadow-lg shadow-blue-200/50 active:scale-95 whitespace-nowrap"
-                  >
-                    <i className="fa-solid fa-plus"></i> Add New Exercise Type
-                  </button>
-
-                  <button 
                     onClick={handleGenerate}
                     disabled={isGenerating}
                     className="px-6 lg:px-8 py-3 bg-orange-600 text-white rounded-xl text-[11px] font-bold uppercase tracking-widest flex items-center gap-3 hover:bg-orange-700 transition-all shadow-lg shadow-orange-200/50 active:scale-95 disabled:opacity-50 whitespace-nowrap"
@@ -2190,7 +2185,7 @@ ${componentLogic}
                         }}
                         className="h-7 px-3 bg-slate-100 text-slate-600 rounded-lg text-[9px] font-bold uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center gap-2"
                       >
-                        <i className="fa-solid fa-plus"></i> ADD NEW TYPE
+                        <i className="fa-solid fa-plus"></i> Add NEW
                       </button>
                     </div>
                     <div className="space-y-3">
@@ -2407,7 +2402,7 @@ ${componentLogic}
                         }}
                         className="h-7 px-3 bg-slate-100 text-slate-600 rounded-lg text-[9px] font-bold uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center gap-2"
                       >
-                        <i className="fa-solid fa-plus"></i> ADD NEW TYPE
+                        <i className="fa-solid fa-plus"></i> Add NEW
                       </button>
                     </div>
                     <div className="space-y-3">
@@ -2913,28 +2908,44 @@ ${componentLogic}
           <div className="flex-1 bg-slate-50 overflow-y-auto p-8 no-scrollbar">
             <div className="max-w-4xl mx-auto space-y-10">
               <div className="bg-white rounded-[32px] p-10 border border-slate-100 shadow-sm">
-                <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight">Exercise Layout Architect</h3>
-                <p className="text-sm text-slate-500 mb-8">Choose the number of columns for your exercise lists (1 to 6 columns).</p>
+                <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight">Table/column Architect</h3>
+                <p className="text-sm text-slate-500 mb-8">Choose a style for the "PART A: ..." instruction headers, tables, and columns.</p>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {[1, 2, 3, 4, 5, 6].map((cols) => (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {[
+                    { id: 0, name: 'Classic Dark', style: { backgroundColor: '#334155', color: 'white', padding: '10px', fontWeight: 'bold', textAlign: 'center' } },
+                    { id: 1, name: 'Soft Blue', style: { backgroundColor: '#dbeafe', color: '#1e3a8a', padding: '10px', fontWeight: 'bold', borderLeft: '4pt solid #1e3a8a' } },
+                    { id: 2, name: 'Soft Green', style: { backgroundColor: '#dcfce7', color: '#064e3b', padding: '10px', fontWeight: 'bold', borderLeft: '4pt solid #064e3b' } },
+                    { id: 3, name: 'Soft Rose', style: { backgroundColor: '#fee2e2', color: '#7f1d1d', padding: '10px', fontWeight: 'bold', borderLeft: '4pt solid #7f1d1d' } },
+                    { id: 4, name: 'Minimalist Border', style: { border: '1.5pt solid #334155', color: '#334155', padding: '10px', fontWeight: 'bold', textAlign: 'center' } },
+                    { id: 5, name: 'Underlined Bold', style: { borderBottom: '2.5pt solid #334155', color: '#334155', padding: '10px 0', fontWeight: '900', fontSize: '14pt' } },
+                    { id: 6, name: 'Double Underline', style: { borderBottom: '4pt double #334155', color: '#334155', padding: '10px 0', fontWeight: 'bold' } },
+                    { id: 7, name: 'Modern Slate', style: { backgroundColor: '#f1f5f9', color: '#1e293b', padding: '10px', fontWeight: 'bold', borderRadius: '8px' } },
+                    { id: 8, name: 'Indigo Accent', style: { backgroundColor: '#e0e7ff', color: '#3730a3', padding: '10px', fontWeight: 'bold', borderRight: '4pt solid #3730a3' } },
+                    { id: 9, name: 'Amber Box', style: { backgroundColor: '#fffbeb', color: '#92400e', padding: '10px', fontWeight: 'bold', border: '1pt dashed #92400e' } },
+                    { id: 10, name: 'Clean Transparent', style: { color: '#334155', padding: '10px 0', fontWeight: 'bold', borderBottom: '1pt solid #e2e8f0' } },
+                    { id: 11, name: 'Gradient Night', style: { background: 'linear-gradient(90deg, #1e293b, #475569)', color: 'white', padding: '12px', fontWeight: 'bold', textAlign: 'center', borderRadius: '4px' } },
+                    { id: 12, name: 'Neon Emerald', style: { border: '2pt solid #10b981', color: '#065f46', padding: '10px', fontWeight: '900', textAlign: 'center', backgroundColor: '#ecfdf5' } },
+                    { id: 13, name: 'Brutalist Yellow', style: { border: '3pt solid black', backgroundColor: '#facc15', color: 'black', padding: '10px', fontWeight: '900', textTransform: 'uppercase' } },
+                    { id: 14, name: 'Mix Styles', style: { background: 'repeating-linear-gradient(45deg, #f1f5f9, #f1f5f9 10px, #ffffff 10px, #ffffff 20px)', border: '1pt solid #cbd5e1', color: '#334155', padding: '10px', fontWeight: 'bold', textAlign: 'center' } },
+                    { id: 15, name: 'Royal Purple', style: { backgroundColor: '#581c87', color: 'white', padding: '10px', fontWeight: 'bold', border: '2pt solid #fbbf24', textAlign: 'center' } },
+                    { id: 16, name: 'Eco Leaf', style: { backgroundColor: '#14532d', color: 'white', padding: '10px', fontWeight: 'bold', borderRadius: '20px 0 20px 0' } },
+                    { id: 17, name: 'Sky Gradient', style: { background: 'linear-gradient(90deg, #0ea5e9, #38bdf8)', color: 'white', padding: '10px', fontWeight: 'bold', textAlign: 'center' } },
+                    { id: 18, name: 'Minimalist Dot', style: { border: '2pt dotted #64748b', color: '#475569', padding: '10px', fontWeight: 'bold' } },
+                    { id: 19, name: 'Bold Orange', style: { backgroundColor: '#ea580c', color: 'white', padding: '10px', fontWeight: '900', borderBottom: '4pt solid #9a3412' } },
+                    { id: 20, name: 'Zebra Style', style: { background: 'linear-gradient(90deg, #f8fafc 50%, #f1f5f9 50%)', backgroundSize: '40px 100%', border: '1pt solid #cbd5e1', color: '#1e293b', padding: '10px', fontWeight: 'bold', textAlign: 'center' } }
+                  ].map((style) => (
                     <div 
-                      key={cols}
-                      onClick={() => setDefaultColumnCount(cols)}
-                      className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${defaultColumnCount === cols ? 'border-rose-500 bg-rose-50/30 shadow-md' : 'border-slate-200 hover:border-rose-300 bg-white'}`}
+                      key={style.id}
+                      onClick={() => setInstructionHeaderStyle(style.id)}
+                      className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${instructionHeaderStyle === style.id ? 'border-rose-500 bg-rose-50/30 shadow-md' : 'border-slate-200 hover:border-rose-300 bg-white'}`}
                     >
                       <div className="flex justify-between items-center mb-4">
-                        <h5 className="font-bold text-slate-700">{cols} {cols === 1 ? 'Column' : 'Columns'}</h5>
-                        {defaultColumnCount === cols && <div className="h-6 w-6 bg-rose-500 text-white rounded-full flex items-center justify-center text-xs"><i className="fa-solid fa-check"></i></div>}
+                        <h5 className="font-bold text-slate-700">{style.name}</h5>
+                        {instructionHeaderStyle === style.id && <div className="h-6 w-6 bg-rose-500 text-white rounded-full flex items-center justify-center text-xs"><i className="fa-solid fa-check"></i></div>}
                       </div>
-                      <div className="bg-white p-4 border border-slate-100 rounded-xl min-h-[120px]">
-                        <div className={`grid grid-cols-${cols} gap-2`}>
-                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].slice(0, cols * 2).map(i => (
-                            <div key={i} className="text-[8px] text-slate-400 border border-slate-50 p-1 rounded bg-slate-50/50">
-                              {i}. Question item...
-                            </div>
-                          ))}
-                        </div>
+                      <div className="bg-white p-4 border border-slate-100 rounded-xl">
+                        <div style={style.style as any}>PART A: CHOOSE THE BEST OPTION</div>
                       </div>
                     </div>
                   ))}
