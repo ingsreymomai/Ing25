@@ -150,7 +150,7 @@ const DEFAULT_BRAND_SETTINGS: BrandSettings = {
   fontWeight: '800',
   letterSpacing: 0,
   textTransform: 'none',
-  schoolName: 'GLOBAL EDUCATION ACADEMY',
+  schoolName: 'Global Education Academy',
   schoolAddress: 'Developing Potential for Success School',
   footerText: 'This test is for educational purposes only. © 2026 DPSS.',
   studentLabel: 'STUDENT NAME',
@@ -277,7 +277,7 @@ function App() {
   useEffect(() => {
     if (!isAuthReady || !auth.currentUser) return;
 
-    const userSettingsRef = doc(db, 'users', auth.currentUser.uid);
+    const userSettingsRef = doc(db, 'user_settings', auth.currentUser.uid);
     
     const unsubscribe = onSnapshot(userSettingsRef, (docSnap) => {
       if (docSnap.exists()) {
@@ -287,7 +287,7 @@ function App() {
         if (data.paperDesign !== undefined) setPaperDesign(data.paperDesign);
       }
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, `users/${auth.currentUser?.uid}`);
+      handleFirestoreError(error, OperationType.GET, `user_settings/${auth.currentUser?.uid}`);
     });
 
     return () => unsubscribe();
@@ -297,55 +297,13 @@ function App() {
   useEffect(() => {
     if (!isAuthReady || !auth.currentUser) return;
 
-    const q = query(collection(db, 'customDesigns'), where('uid', '==', auth.currentUser.uid));
+    const q = query(collection(db, 'custom_designs'), where('uid', '==', auth.currentUser.uid));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const designs = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as any));
       setCustomDesigns(designs);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'customDesigns');
-    });
-
-    return () => unsubscribe();
-  }, [isAuthReady]);
-
-  // Sync custom exercise types with Firestore
-  useEffect(() => {
-    if (!isAuthReady || !auth.currentUser) return;
-
-    const q = query(collection(db, 'customExerciseTypes'), where('uid', '==', auth.currentUser.uid));
-    
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const types = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as any));
-      if (types.length > 0) {
-        setCustomExerciseTypes(prev => {
-          // Merge with defaults if needed, but usually we just want the cloud ones
-          return types;
-        });
-      }
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'customExerciseTypes');
-    });
-
-    return () => unsubscribe();
-  }, [isAuthReady]);
-
-  // Sync history with Firestore
-  useEffect(() => {
-    if (!isAuthReady || !auth.currentUser) return;
-
-    const q = query(
-      collection(db, 'history'), 
-      where('uid', '==', auth.currentUser.uid),
-      orderBy('timestamp', 'desc'),
-      limit(30)
-    );
-    
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const cloudHistory = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as HistoryItem));
-      setHistory(cloudHistory);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'history');
+      handleFirestoreError(error, OperationType.LIST, 'custom_designs');
     });
 
     return () => unsubscribe();
@@ -354,7 +312,7 @@ function App() {
   const saveSettingsToFirestore = async () => {
     if (!auth.currentUser) return;
     try {
-      const userSettingsRef = doc(db, 'users', auth.currentUser.uid);
+      const userSettingsRef = doc(db, 'user_settings', auth.currentUser.uid);
       await setDoc(userSettingsRef, {
         uid: auth.currentUser.uid,
         brandSettings,
@@ -363,53 +321,7 @@ function App() {
         updatedAt: Timestamp.now()
       }, { merge: true });
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, `users/${auth.currentUser.uid}`);
-    }
-  };
-
-  const handleAddCustomExerciseType = () => {
-    setNewExerciseCategory(activeModule.charAt(0).toUpperCase() + activeModule.slice(1).toLowerCase());
-    setNewExerciseName('');
-    setShowAddExerciseModal(true);
-  };
-
-  const saveCustomExerciseType = async () => {
-    if (newExerciseName.trim()) {
-      const id = `custom_${Date.now()}`;
-      const newType: CustomExerciseType = { 
-        id, 
-        name: newExerciseName.trim(), 
-        category: newExerciseCategory as any,
-        uid: auth.currentUser?.uid || 'anonymous'
-      };
-
-      // Update state
-      setCustomExerciseTypes(prev => [...prev, newType]);
-
-      // Save to Firestore if logged in
-      if (auth.currentUser) {
-        try {
-          await setDoc(doc(db, 'customExerciseTypes', id), newType);
-        } catch (error) {
-          handleFirestoreError(error, OperationType.WRITE, `customExerciseTypes/${id}`);
-        }
-      }
-      setShowAddExerciseModal(false);
-    }
-  };
-
-  const handleDeleteCustomDesign = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this design?")) return;
-    
-    setCustomDesigns(prev => prev.filter(d => d.id !== id));
-    
-    if (auth.currentUser) {
-      try {
-        const { deleteDoc } = await import('firebase/firestore');
-        await deleteDoc(doc(db, 'customDesigns', id));
-      } catch (error) {
-        handleFirestoreError(error, OperationType.DELETE, `customDesigns/${id}`);
-      }
+      handleFirestoreError(error, OperationType.WRITE, `user_settings/${auth.currentUser.uid}`);
     }
   };
   const [isAssistantVisible, setIsAssistantVisible] = useState(false);
@@ -436,11 +348,7 @@ function App() {
   const [activeSubject, setActiveSubject] = useState<string>('cambodia');
   const [isRandomSubject, setIsRandomSubject] = useState(false);
   const [showSubjectModal, setShowSubjectModal] = useState(false);
-  const [showAddExerciseModal, setShowAddExerciseModal] = useState(false);
-  const [newExerciseName, setNewExerciseName] = useState('');
-  const [newExerciseCategory, setNewExerciseCategory] = useState<string>('Grammar');
   const [globalLayout, setGlobalLayout] = useState<number>(0); // 0-19: Paper Styles
-  const [tableStyle, setTableStyle] = useState<string>('plain'); // plain, grid, list
   const [baseLayout, setBaseLayout] = useState<number>(() => {
     const saved = localStorage.getItem('dp_base_layout');
     return saved ? parseInt(saved) : 0;
@@ -461,7 +369,6 @@ function App() {
     }
   });
   const [instructionHeaderStyle, setInstructionHeaderStyle] = useState<number>(0); // 0: Default, 1-10: Styles
-  const [defaultColumnCount, setDefaultColumnCount] = useState<number>(1); // 1-6 columns
   const [architectTab, setArchitectTab] = useState<'Grammar' | 'Vocabulary' | 'Reading' | 'Mixed' | 'Generals' | 'Custom'>('Grammar');
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const [mcqLayout, setMcqLayout] = useState<'single' | 'double' | 'quad'>(() => {
@@ -499,8 +406,6 @@ function App() {
     wordBox: number | string;
     readingPassage: number | string;
     matching: string;
-    cloze: number | string;
-    doubleMcq: number | string;
   }>(() => {
     try {
       const saved = localStorage.getItem('dp_paper_styles_v2');
@@ -513,9 +418,7 @@ function App() {
         sentenceCompletion: 0,
         wordBox: 0,
         readingPassage: 0,
-        matching: 'classic',
-        cloze: 0,
-        doubleMcq: 0
+        matching: 'classic'
       };
     } catch {
       return {
@@ -527,9 +430,7 @@ function App() {
         sentenceCompletion: 0,
         wordBox: 0,
         readingPassage: 0,
-        matching: 'classic',
-        cloze: 0,
-        doubleMcq: 0
+        matching: 'classic'
       };
     }
   });
@@ -1239,15 +1140,7 @@ function App() {
       const design = customDesigns.find(d => d.id === value);
       if (design) {
         const customHtml = design.style.editableContent?.mainContent || design.style.mainContent || design.prompt || '';
-        return `[CUSTOM DESIGN ENFORCED - ABSOLUTE MANDATORY]: You MUST use this EXACT HTML structure as a template for each item in the ${type} section:
-\`\`\`html
-${customHtml}
-\`\`\`
-[STRICT RULES]:
-1. ELEMENT ORDER: You MUST maintain the EXACT order of elements (tables, text, blanks, etc.) as shown in the template.
-2. TABLE STRUCTURE: If the template uses a table for questions or options, you MUST use a table.
-3. PLACEHOLDER REPLACEMENT: Replace the sample text with REAL questions about {{TOPIC}}.
-4. NO DEVIATION: Do NOT add extra spacing or change the layout. The user expects the generated test to look IDENTICAL to their design.`;
+        return `[CUSTOM DESIGN ENFORCED]: You MUST use this exact HTML structure as a template for each item: \n\`\`\`html\n${customHtml}\n\`\`\`\nReplace the placeholder text with the actual question content. Ensure the final output strictly matches this structure.`;
       }
     }
     return defaultLogic;
@@ -1296,8 +1189,6 @@ ${customHtml}
                            paperStyles.readingPassage === 2 ? "Text enclosed in a bordered box." :
                            "Custom Reading Passage style " + (typeof paperStyles.readingPassage === 'number' ? paperStyles.readingPassage + 1 : paperStyles.readingPassage))}
 - Matching Style: ${getStyleInstruction('matching', paperStyles.matching, paperStyles.matching === 'classic' ? "Classic A/B columns." : "Custom Matching style " + paperStyles.matching)}
-- Cloze Style: ${getStyleInstruction('cloze', paperStyles.cloze, "Standard cloze passage with blanks.")}
-- Double MCQ Style: ${getStyleInstruction('doubleMcq', paperStyles.doubleMcq, "Standard double-gap MCQ with 4 options per item.")}
 `;
 
     if (selectedInstructionIds.length === 0) { 
@@ -1362,16 +1253,6 @@ ${customHtml}
     const strategyInstruction = answerStrategy === 'GENERAL_MIXED' 
       ? `[STRATEGY]: GENERAL-MIXED (Horizontal Logic). The context is {{TOPIC}}, but distractors should test high-frequency "general" errors (Gerunds, Prepositions, Agreement).`
       : `[STRATEGY]: TOPIC-FOCUSED (Vertical Logic). Every item and distractor must focus strictly on the rules of {{TOPIC}}.`;
-
-    const generationIntegrityInstruction = `
-[GENERATION INTEGRITY - CRITICAL]:
-1. ALL SELECTED TYPES: You MUST generate content for EVERY SINGLE exercise type selected in the list below. Do NOT skip any.
-2. UNIQUE READING PASSAGES: For Reading exercises, you MUST generate a COMPLETELY UNIQUE and DIFFERENT reading passage for EACH exercise type. 
-   - Example: If "Reading MCQ" and "Reading T/F" are both selected, you MUST generate TWO different stories/texts. 
-   - NEVER use the same text for multiple exercise types unless the user explicitly asks for "One Reading Text for All Parts".
-3. ITEM COUNTS: Strictly follow the item count overrides if provided.
-4. VARIETY: Ensure high variety in scenarios and sentence structures.
-`;
 
     const rulerInstruction = `\n[RULER STYLE - CRITICAL]: After EVERY instruction header (e.g., PART A: ...), you MUST insert a <div class="instruction-ruler-5"></div>. This is a visual separator.`;
 
@@ -1551,10 +1432,23 @@ ${customHtml}
     const alignments = ['left', 'center', 'right'];
     const randomAlignment = alignments[Math.floor(Math.random() * alignments.length)];
     
-    const headerStyle = `class="header-row", background-color: #334155, color: white, text-align: left, padding-left: 15pt, font-weight: bold`;
+    let headerStyle = `class="header-row", background-color: #dcfce7, color: #064e3b, border-left: 6pt solid #059669, text-align: left, padding-left: 15pt, font-weight: bold`;
+    
+    if (instructionHeaderStyle === 6) {
+      headerStyle += `, border-bottom: 4pt double #334155`;
+    } else if (instructionHeaderStyle === 11) {
+      headerStyle += `, background: linear-gradient(90deg, #1e293b, #475569), color: white`;
+    } else if (instructionHeaderStyle === 12) {
+      headerStyle += `, border: 2pt solid #10b981, color: #065f46, background-color: #ecfdf5`;
+    } else if (instructionHeaderStyle === 13) {
+      headerStyle += `, border: 3pt solid black, background-color: #facc15, color: black`;
+    } else if (instructionHeaderStyle === 14) {
+      headerStyle = `class="header-row", MANDATORY: For each PART (A, B, C, etc.), you MUST use a DIFFERENT visual style for the header row. Mix backgrounds, borders, and colors.`;
+    }
+
     
     const componentLogic = selectedTemps.map((t, idx) => {
-      const overrideCol = columnOverrides[t.id] !== undefined ? columnOverrides[t.id] : (t.columnCount !== undefined ? t.columnCount : defaultColumnCount);
+      const overrideCol = columnOverrides[t.id] !== undefined ? columnOverrides[t.id] : (t.columnCount !== undefined ? t.columnCount : 0);
       const overrideItems = itemCountOverrides[t.id] || 10;
       
       let blueprintStr = '';
@@ -1582,50 +1476,85 @@ ${customHtml}
       }
 
       let formatInstruction = '';
-      
-      const effectiveCols = overrideCol > 0 ? overrideCol : 1;
-      const effectiveTableStyle = overrideCol === 0 ? 'list' : tableStyle;
 
-      if (effectiveTableStyle === 'plain') {
+      // Use overrideCol if it's > 0, otherwise use baseLayout defaults
+      const effectiveCols = overrideCol > 0 ? overrideCol : ([2, 3, 4].includes(baseLayout) ? 2 : 1);
+      const isForcedList = overrideCol === 0 && ![2, 3, 4].includes(baseLayout);
+
+      if (isForcedList) {
+        formatInstruction = `(FORMAT: Standard numbered list. ${isPartBackgroundEnabled ? 'MANDATORY: Wrap the entire part in a <div class="..."> with a unique background style class from the PART BACKGROUND PROTOCOL.' : ''} Every numbered item (1., 2., 3., etc.) MUST start on a NEW LINE using an HTML <p> or <br> tag. DO NOT bunch them together in a single paragraph. DO NOT use tables or columns.)`;
+      } else if (baseLayout === 0 || (baseLayout === 3 && effectiveCols === 1)) {
+        // Option 1 (Clean) or Option 4 with 1 column override
         if (effectiveCols > 1) {
           formatInstruction = `(MANDATORY FORMAT: Use a real HTML <table> with ${effectiveCols} columns. 
             ${isPartBackgroundEnabled ? 'MANDATORY: Apply a unique background style class from the PART BACKGROUND PROTOCOL to this <table> tag.' : ''}
             - Row 1: Header row spanning all ${effectiveCols} columns (colspan="${effectiveCols}"), with ${headerStyle}. Title: "PART ${String.fromCharCode(65 + idx)}: ${t.professionalLabel || t.label}".
             - Row 2: Distribute the ${overrideItems} items STRICTLY EVENLY across ${effectiveCols} columns. (e.g. if 10 items, put 5 in Col 1 and 5 in Col 2).
             - MANDATORY: Every numbered item (1., 2., 3., etc.) MUST start on a NEW LINE using an HTML <p> or <br> tag. DO NOT bunch them together.
-            - The table MUST have an outer border: 1.5pt solid #334155.
-            - DO NOT put borders between the items inside the cells. This is the "Plain" layout with ${effectiveCols} columns.)`;
+            - The table MUST have a border: 1.5pt solid #334155.
+            - DO NOT put borders between the items inside the cells. This is the "Clean" layout with ${effectiveCols} columns.)`;
         } else {
           formatInstruction = `(MANDATORY FORMAT: Use a real HTML <table> with 1 column and EXACTLY 2 rows. 
             ${isPartBackgroundEnabled ? 'MANDATORY: Apply a unique background style class from the PART BACKGROUND PROTOCOL to this <table> tag.' : ''}
             - Row 1: Header row with ${headerStyle}. Title: "PART ${String.fromCharCode(65 + idx)}: ${t.professionalLabel || t.label}".
             - Row 2: A single <td> containing ALL ${overrideItems} items. MANDATORY: Every numbered item (1., 2., 3., etc.) MUST start on a NEW LINE using an HTML <p> or <br> tag. DO NOT bunch them together in a single paragraph.
-            - The table MUST have an outer border: 1.5pt solid #334155.
-            - DO NOT put borders between the items inside the second row. This is the "Plain" layout.)`;
+            - The table MUST have a border: 1.5pt solid #334155.
+            - DO NOT put borders between the items inside the second row. This is the "Clean" layout.)`;
         }
-      } else if (effectiveTableStyle === 'grid') {
+      } else if (baseLayout === 1) {
+        // Option 2 (Lined): 1 column, multiple rows (Header + One row per item)
+        if (effectiveCols > 1) {
+          formatInstruction = `(MANDATORY FORMAT: Use a real HTML <table> with ${effectiveCols} columns. 
+            ${isPartBackgroundEnabled ? 'MANDATORY: Apply a unique background style class from the PART BACKGROUND PROTOCOL to this <table> tag.' : ''}
+            - Row 1: Header row spanning all ${effectiveCols} columns (colspan="${effectiveCols}"), with ${headerStyle}. Title: "PART ${String.fromCharCode(65 + idx)}: ${t.professionalLabel || t.label}".
+            - Subsequent rows: Distribute the ${overrideItems} items STRICTLY EVENLY across ${effectiveCols} columns.
+            - Every <td> MUST have a border: 1pt solid #334155; padding: 10px;
+            - This creates a lined grid with ${effectiveCols} columns.)`;
+        } else {
+          formatInstruction = `(MANDATORY FORMAT: Use a real HTML <table> with 1 column. 
+            ${isPartBackgroundEnabled ? 'MANDATORY: Apply a unique background style class from the PART BACKGROUND PROTOCOL to this <table> tag.' : ''}
+            - Row 1: Header row with ${headerStyle}. Title: "PART ${String.fromCharCode(65 + idx)}: ${t.professionalLabel || t.label}".
+            - Subsequent rows: Each row contains EXACTLY ONE item.
+            - Every <td> MUST have a border: 1pt solid #334155; padding: 10px;
+            - This creates lines between every question.)`;
+        }
+      } else if (baseLayout === 2) {
+        // Option 3 (Grid): 2 columns, multiple rows (Header + Items distributed)
         formatInstruction = `(MANDATORY FORMAT: Use a real HTML <table> with ${effectiveCols} columns. 
             ${isPartBackgroundEnabled ? 'MANDATORY: Apply a unique background style class from the PART BACKGROUND PROTOCOL to this <table> tag.' : ''}
             - Row 1: Header row spanning all ${effectiveCols} columns (colspan="${effectiveCols}"), with ${headerStyle}. Title: "PART ${String.fromCharCode(65 + idx)}: ${t.professionalLabel || t.label}".
             - Subsequent rows: Distribute the ${overrideItems} items STRICTLY EVENLY across ${effectiveCols} columns (one item per cell).
             - Every <td> MUST have a border: 1pt solid #334155; padding: 10px; vertical-align: top;
             - This creates a professional worksheet grid with ${effectiveCols} columns.)`;
-      } else if (effectiveTableStyle === 'list') {
-        if (effectiveCols > 1) {
-          formatInstruction = `(MANDATORY FORMAT: Use a real HTML <table> with ${effectiveCols} columns. 
+      } else if (baseLayout === 3) {
+        // Option 4 (Vertical Ruler Middle): 2 columns with a middle ruler
+        formatInstruction = `(MANDATORY FORMAT: Use a real HTML <table> with 2 columns. 
             ${isPartBackgroundEnabled ? 'MANDATORY: Apply a unique background style class from the PART BACKGROUND PROTOCOL to this <table> tag.' : ''}
-            - Row 1: Header row spanning all ${effectiveCols} columns (colspan="${effectiveCols}"), with ${headerStyle}. Title: "PART ${String.fromCharCode(65 + idx)}: ${t.professionalLabel || t.label}".
-            - Subsequent rows: Distribute the ${overrideItems} items STRICTLY EVENLY across ${effectiveCols} columns.
-            - Every <td> MUST have a bottom border: 1pt solid #334155; padding: 10px;
-            - This creates a lined list with ${effectiveCols} columns.)`;
-        } else {
-          formatInstruction = `(MANDATORY FORMAT: Use a real HTML <table> with 1 column. 
-            ${isPartBackgroundEnabled ? 'MANDATORY: Apply a unique background style class from the PART BACKGROUND PROTOCOL to this <table> tag.' : ''}
-            - Row 1: Header row with ${headerStyle}. Title: "PART ${String.fromCharCode(65 + idx)}: ${t.professionalLabel || t.label}".
-            - Subsequent rows: Each row contains EXACTLY ONE item.
-            - Every <td> MUST have a bottom border: 1pt solid #334155; padding: 10px;
-            - This creates horizontal lines between every question.)`;
-        }
+            - Row 1: Header row spanning both columns (colspan="2"), with ${headerStyle}. Title: "PART ${String.fromCharCode(65 + idx)}: ${t.professionalLabel || t.label}".
+            - Subsequent rows: Distribute the ${overrideItems} items STRICTLY EVENLY across 2 columns.
+            - MANDATORY: The <table> MUST have a class="ruler-table". 
+            - The middle border between columns MUST be a solid 1.5pt line (the "ruler").
+            - DO NOT use outer borders. ONLY the middle vertical border is allowed.
+            - [CRITICAL]: If you do not use a 2-column table for EVERY part, the middle ruler line will be broken. This is the "Middle Ruler" layout where content is split into two halves.)`;
+      } else if (baseLayout === 4) {
+        // Option 5 (Rulers Left): 2 columns, 1 row (Header) + N rows (Items)
+        formatInstruction = `(MANDATORY FORMAT: Use a real HTML <table> with 2 columns. 
+          - Row 1: Header row spanning both columns (colspan="2"), with ${headerStyle}. Title: "PART ${String.fromCharCode(65 + idx)}: ${t.professionalLabel || t.label}".
+          - Subsequent Rows: Each row MUST have EXACTLY 2 cells (<td>). 
+          - Cell 1: The Question Number and Instruction (e.g. "1. Choose the correct answer:").
+          - Cell 2: The actual question content or MCQ options.
+          - MANDATORY: The table MUST have a vertical border between the two columns to act as a "Ruler".
+          - Use class="ruler-table" for the <table> tag.
+          - This is the "Ruler" layout where the left column is for numbering and the right column is for content.)`;
+      } else if (baseLayout >= 5) {
+        // Options 6-9 (S1-S4): Similar to Clean but with different background lines
+        formatInstruction = `(MANDATORY FORMAT: Use a real HTML <table> with 1 column and EXACTLY 2 rows. 
+          - Row 1: Header row with ${headerStyle}. Title: "PART ${String.fromCharCode(65 + idx)}: ${t.professionalLabel || t.label}".
+          - Row 2: A single <td> containing ALL ${overrideItems} items. MANDATORY: Every numbered item (1., 2., 3., etc.) MUST start on a NEW LINE using an HTML <p> or <br> tag.
+          - The table MUST have a border: 1.5pt solid #334155.
+          - This is a "Lined" layout with special background lines.)`;
+      } else {
+        formatInstruction = `(FORMAT: Standard numbered list. ${isPartBackgroundEnabled ? 'MANDATORY: Wrap the entire part in a <div class="..."> with a unique background style class from the PART BACKGROUND PROTOCOL.' : ''} Every numbered item (1., 2., 3., etc.) MUST start on a NEW LINE using an HTML <p> or <br> tag. DO NOT bunch them together in a single paragraph. DO NOT use tables or columns.)`;
       }
         
       const rawHeader = t.professionalLabel || t.label;
@@ -1654,10 +1583,10 @@ ${customHtml}
       : `1. GENERATE A UNIQUE, SEPARATE PASSAGE (~${readingPassageLength}) FOR EVERY SINGLE PART of the test. Each part MUST have its own distinct text.`;
 
     const mandatorySequence = activeModule === 'Grammar' 
-      ? `1. GENERATE ALL ${selectedInstructionIds.length} REQUESTED PARTS. ADAPT TITLES TO MATCH "${topic}".\n2. ENFORCE "NO FREE VERB" & "SITUATIONAL EVIDENCE" rules for all grammar stems. MANDATORY: Every question MUST have a full context sentence. DO NOT generate just blanks.\n3. [SOURCE PRIORITY]: If source material is provided, strictly use ALL grammar rules and examples from it. If there are 6 rules, use all 6.\n4. [VARIETY]: If no specific topic is provided, generate a variety of grammar topics (e.g., Tenses, Conditionals, Relative Clauses, Passive Voice, etc.). DO NOT default to just one topic.\n5. [COMPLETENESS]: You are FORBIDDEN from stopping early. You MUST generate ALL parts requested.`
+      ? `1. GENERATE ALL REQUESTED PARTS. ADAPT TITLES TO MATCH "${topic}".\n2. ENFORCE "NO FREE VERB" & "SITUATIONAL EVIDENCE" rules for all grammar stems. MANDATORY: Every question MUST have a full context sentence. DO NOT generate just blanks.\n3. [SOURCE PRIORITY]: If source material is provided, strictly use ALL grammar rules and examples from it. If there are 6 rules, use all 6.\n4. [CAPITALIZATION]: ${instructionCase === 'uppercase' ? 'ALL instructions and headers MUST be in ALL CAPS.' : 'Instructions and headers MUST follow Title Case.'}`
       : activeModule === 'Reading'
-      ? `${readingPassageInstruction}\n2. APPLY [NATURAL PARAPHRASE] logic to all questions (No keyword matching).\n3. ENFORCE [READING LOGIC FIREWALL] (Strictly forbidden from testing grammar).\n4. ENSURE all distractors are grammatically identical to the correct answer.\n5. [UNIQUE PASSAGES]: Each exercise type MUST have its own unique reading passage unless "Single Reading Text" is active.\n6. [COMPLETENESS]: You MUST generate ALL ${selectedInstructionIds.length} requested parts.`
-      : `1. GENERATE ALL ${selectedInstructionIds.length} REQUESTED PARTS. ADAPT TITLES TO MATCH "${topic}".\n2. ENFORCE [VOCABULARY FIREWALL] (No grammar clues).\n3. [COMPLETENESS]: You MUST generate ALL parts requested.`;
+      ? `${readingPassageInstruction}\n2. APPLY [NATURAL PARAPHRASE] logic to all questions (No keyword matching).\n3. ENFORCE [READING LOGIC FIREWALL] (Strictly forbidden from testing grammar).\n4. ENSURE all distractors are grammatically identical to the correct answer.\n5. [CAPITALIZATION]: ${instructionCase === 'uppercase' ? 'ALL instructions and headers MUST be in ALL CAPS.' : 'Instructions and headers MUST follow Title Case.'}`
+      : `1. GENERATE ALL REQUESTED PARTS. ADAPT TITLES TO MATCH "${topic}".\n2. ENFORCE [VOCABULARY FIREWALL] (No grammar clues).\n3. [CAPITALIZATION]: ${instructionCase === 'uppercase' ? 'ALL instructions and headers MUST be in ALL CAPS.' : 'Instructions and headers MUST follow Title Case.'}`;
 
     const instructionRulerPrompt = instructionRulerStyle > 0 
       ? `[INSTRUCTION RULER - MANDATORY]: After EVERY instruction header (e.g., PART A: ...), you MUST insert a <div class="instruction-ruler-${instructionRulerStyle}"></div>. This is a visual separator that MUST be visible.
@@ -1671,7 +1600,6 @@ ${customHtml}
 
     const finalLogic = `
 ${moduleSafetyGuard}
-${generationIntegrityInstruction}
 ${subjectInstruction}
 ${caseInstruction}
 ${GLOBAL_STRICT_COMMAND.replace(/{{TOPIC}}/g, topic || "General English").replace(/{{BLANK}}/g, selectedBlankStyle)}
@@ -1745,9 +1673,9 @@ ${componentLogic}
         level: activeLevel,
         topic: topic,
         // Add who created it
-        authorName: auth.currentUser?.displayName || session?.name || 'Anonymous',
-        authorEmail: auth.currentUser?.email || session?.email || 'N/A',
-        uid: auth.currentUser?.uid || 'anonymous'
+        authorName: session?.name || 'Anonymous',
+        authorCode: session?.code || 'N/A',
+        authorEmail: session?.email || 'N/A'
       };
 
       // 3. Update Local History (so you see it on screen)
@@ -1757,13 +1685,13 @@ ${componentLogic}
       });
 
       // 4. SEND TO THE CLOUD (The Magic Step!)
-      if (auth.currentUser) {
-        try {
-             await setDoc(doc(db, 'history', newTestItem.id), newTestItem);
-             console.log("✅☁️ Test successfully saved to the Firebase Cloud Notebook!");
-        } catch (e) {
-             handleFirestoreError(e, OperationType.WRITE, `history/${newTestItem.id}`);
-        }
+      try {
+           // This line sends the data to a collection named 'generatedTests' in your Firebase database
+           await addDoc(collection(db, 'generatedTests'), newTestItem);
+           console.log("✅☁️ Test successfully saved to the Firebase Cloud Notebook!");
+      } catch (e) {
+           // If something goes wrong, tell the console
+           handleFirestoreError(e, 'create' as any, 'generatedTests');
       }
     } catch (error: any) {
       console.error("Generation failed:", error);
@@ -1830,9 +1758,7 @@ ${componentLogic}
     const logoHtml = brandSettings.logoData ? `<table style="width: 100%; border: none; margin-bottom: 2pt;"><tr><td style="border: none; text-align: center;"><img src="${brandSettings.logoData}" width="624" style="width: 6.5in;" /></td></tr></table>` : '';
     const activeFontObj = FONTS.find(f => f.name === brandSettings.activeFont);
     const activeFontFamily = activeFontObj ? activeFontObj.family : "'Times New Roman', serif";
-    const headerText = brandSettings.customHeaderText || `${activeLevel}: ${activeModule}: ${topic || 'Assessment'}`;
-    const headerRuler = (brandSettings.headerRulerStyle || 0) > 0 ? `<div class="instruction-ruler-${brandSettings.headerRulerStyle}" style="margin-top: 4pt; margin-bottom: 4pt;"></div>` : '';
-    const header = `${logoHtml}<table style="width: 100%; border-bottom: ${(brandSettings.headerRulerStyle || 0) > 0 ? 'none' : '2pt solid black'}; margin-bottom: 2pt; font-family: ${activeFontFamily};"><tr><td style="border: none; width: 100%; text-align: center;"><b>${headerText}</b></td></tr></table>${headerRuler}`;
+    const header = `${logoHtml}<table style="width: 100%; border-bottom: 2pt solid black; margin-bottom: 2pt; font-family: ${activeFontFamily};"><tr><td style="border: none; width: 100%; text-align: center;"><b>${activeLevel}: ${activeModule}: ${topic || 'Assessment'}</b></td></tr></table>`;
     
     // Use the headerHtml argument correctly
     exportToWord(
@@ -2052,7 +1978,7 @@ ${componentLogic}
               } catch (e) { console.error(e); }
             }}
             brandSettings={brandSettings}
-            templates={instructionTemplates.filter(t => t.category?.toUpperCase() === activeModule.toUpperCase() || t.category?.toUpperCase() === 'ALL')}
+            templates={instructionTemplates.filter(t => t.category?.toUpperCase() === activeModule.toUpperCase())}
             activeTemplate={null}
             onTemplateSelect={(t) => toggleInstruction(t.id)}
             isSingleReadingText={isSingleReadingText}
@@ -2080,9 +2006,6 @@ ${componentLogic}
             onWidthChange={setSidebarWidth}
             side={sidebarSide}
             onSideChange={setSidebarSide}
-            user={auth.currentUser}
-            onLogin={handleGoogleLogin}
-            onLogout={handleLogout}
           />
 
           <main 
@@ -2108,10 +2031,10 @@ ${componentLogic}
               />
             )}
             {/* Top Navigation Bar */}
-            <header className="h-20 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-4 lg:px-8 flex items-center justify-between shrink-0 relative z-50 overflow-x-auto no-scrollbar">
+            <header className="h-20 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-4 lg:px-8 flex items-center justify-between shrink-0 relative z-10 overflow-x-auto no-scrollbar">
               <div className="flex items-center gap-4 lg:gap-6 min-w-max">
                 {!isSidebarOpen && (
-                  <button onClick={() => setIsSidebarOpen(true)} className="h-10 w-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center text-white hover:text-orange-400 transition-all border border-white/30 cursor-pointer">
+                  <button onClick={() => setIsSidebarOpen(true)} className="h-10 w-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center text-slate-700 hover:text-orange-600 transition-all border border-white/30">
                     <i className="fa-solid fa-bars"></i>
                   </button>
                 )}
@@ -2133,7 +2056,7 @@ ${componentLogic}
                         setBaseLayout(next);
                         if (next === 4) setMcqLayout('quad');
                       }}
-                      className={`px-4 lg:px-6 py-2 rounded-lg text-[11px] font-bold flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer ${baseLayout > 0 ? 'bg-blue-600 text-white shadow-md' : 'text-white hover:bg-white/40'}`}
+                      className={`px-4 lg:px-6 py-2 rounded-lg text-[11px] font-bold flex items-center gap-2 transition-all whitespace-nowrap ${baseLayout > 0 ? 'bg-blue-600 text-white shadow-md' : 'text-slate-700 hover:bg-white/40'}`}
                     >
                       <i className={`fa-solid ${baseLayout === 4 ? 'fa-columns' : baseLayout === 3 ? 'fa-arrows-left-right' : baseLayout === 2 ? 'fa-table-columns' : baseLayout === 1 ? 'fa-grip-lines' : 'fa-list'} text-[10px]`}></i> 
                       {baseLayout === 0 ? 'Option 1' : baseLayout === 1 ? 'Option 2' : baseLayout === 2 ? 'Option 3' : baseLayout === 3 ? 'Option 4' : baseLayout === 4 ? 'Option 5' : `Option ${baseLayout + 1}`}
@@ -2144,7 +2067,7 @@ ${componentLogic}
                         const next = (instructionRulerStyle + 1) % 7;
                         setInstructionRulerStyle(next);
                       }}
-                      className={`px-4 lg:px-6 py-2 rounded-lg text-[11px] font-bold flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer ${instructionRulerStyle > 0 ? 'bg-indigo-600 text-white shadow-md' : 'text-white hover:bg-white/40'}`}
+                      className={`px-4 lg:px-6 py-2 rounded-lg text-[11px] font-bold flex items-center gap-2 transition-all whitespace-nowrap ${instructionRulerStyle > 0 ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-700 hover:bg-white/40'}`}
                     >
                       <i className="fa-solid fa-ruler-horizontal text-[10px]"></i> 
                       {instructionRulerStyle === 0 ? 'Ruler: None' : 
@@ -2157,25 +2080,25 @@ ${componentLogic}
                     </button>
                     <button 
                       onClick={() => setShowSettings(true)}
-                      className="px-4 lg:px-6 py-2 text-white hover:bg-white/40 rounded-lg text-[11px] font-bold flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer"
+                      className="px-4 lg:px-6 py-2 text-slate-700 hover:bg-white/40 rounded-lg text-[11px] font-bold flex items-center gap-2 transition-all whitespace-nowrap"
                     >
                       <i className="fa-solid fa-eye text-[10px]"></i> Workspace
                     </button>
                     <button 
                       onClick={() => fileInputRef.current?.click()}
-                      className="px-4 lg:px-6 py-2 text-white hover:bg-white/40 rounded-lg text-[11px] font-bold flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer"
+                      className="px-4 lg:px-6 py-2 text-slate-700 hover:bg-white/40 rounded-lg text-[11px] font-bold flex items-center gap-2 transition-all whitespace-nowrap"
                     >
                       <i className="fa-solid fa-file-import text-[10px]"></i> Source
                     </button>
                     <button 
                       onClick={() => setIsFrameEnabled(!isFrameEnabled)}
-                      className={`px-4 lg:px-6 py-2 rounded-lg text-[11px] font-bold flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer ${isFrameEnabled ? 'bg-orange-600 text-white shadow-md' : 'text-white hover:bg-white/40'}`}
+                      className={`px-4 lg:px-6 py-2 rounded-lg text-[11px] font-bold flex items-center gap-2 transition-all whitespace-nowrap ${isFrameEnabled ? 'bg-orange-600 text-white shadow-md' : 'text-slate-700 hover:bg-white/40'}`}
                     >
                       <i className={`fa-solid ${isFrameEnabled ? 'fa-square-check' : 'fa-square'} text-[10px]`}></i> Frame
                     </button>
                     <button 
                       onClick={() => setEnablePages(!enablePages)}
-                      className={`px-4 lg:px-6 py-2 rounded-lg text-[11px] font-bold flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer ${enablePages ? 'bg-purple-600 text-white shadow-md' : 'text-white hover:bg-white/40'}`}
+                      className={`px-4 lg:px-6 py-2 rounded-lg text-[11px] font-bold flex items-center gap-2 transition-all whitespace-nowrap ${enablePages ? 'bg-purple-600 text-white shadow-md' : 'text-slate-700 hover:bg-white/40'}`}
                     >
                       <i className={`fa-solid ${enablePages ? 'fa-square-check' : 'fa-square'} text-[10px]`}></i> Pages
                     </button>
@@ -2214,17 +2137,15 @@ ${componentLogic}
                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
                   {/* Templates Left (Half) */}
                   <div className="lg:col-span-1 space-y-4">
-                    <div className="flex items-center justify-between px-2 mb-4">
-                      <div className="flex items-center gap-2">
-                        <div className="h-1 w-4 bg-orange-500 rounded-full"></div>
-                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Templates (A-M)</h3>
-                      </div>
+                    <div className="flex items-center gap-2 px-2 mb-4">
+                      <div className="h-1 w-4 bg-orange-500 rounded-full"></div>
+                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Templates (A-M)</h3>
                     </div>
                     <div className="space-y-3">
                       {instructionTemplates
-                        .filter(t => t.category?.toUpperCase() === activeModule.toUpperCase() || t.category?.toUpperCase() === 'ALL')
+                        .filter(t => t.category?.toUpperCase() === activeModule.toUpperCase())
                         .sort((a, b) => {
-                          const order = ['g_mcq', 'g_correct_incorrect', 'g_circle', 'g_best_rewrite', 'g_complete_sentences', 'g_pair', 'g_spelling'];
+                          const order = ['g_mcq', 'g_correct_incorrect', 'g_circle', 'g_complete_sentences', 'g_pair', 'g_spelling'];
                           const aIdx = order.indexOf(a.id);
                           const bIdx = order.indexOf(b.id);
                           if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
@@ -2232,7 +2153,7 @@ ${componentLogic}
                           if (bIdx !== -1) return 1;
                           return 0;
                         })
-                        .slice(0, Math.ceil(instructionTemplates.filter(t => t.category?.toUpperCase() === activeModule.toUpperCase() || t.category?.toUpperCase() === 'ALL').length / 2))
+                        .slice(0, Math.ceil(instructionTemplates.filter(t => t.category?.toUpperCase() === activeModule.toUpperCase()).length / 2))
                         .map((t, idx) => {
                           const isSelected = selectedInstructionIds.includes(t.id);
                           const cat = t.category?.toUpperCase();
@@ -2322,9 +2243,9 @@ ${componentLogic}
                       </div>
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {instructionTemplates.filter(t => (t.category?.toUpperCase() === activeModule.toUpperCase() || t.category?.toUpperCase() === 'ALL') && selectedInstructionIds.includes(t.id)).map((t, idx) => {
+                        {instructionTemplates.filter(t => t.category?.toUpperCase() === activeModule.toUpperCase() && selectedInstructionIds.includes(t.id)).map((t, idx) => {
                           const curItems = itemCountOverrides[t.id] || 10;
-                          const curCols = columnOverrides[t.id] !== undefined ? columnOverrides[t.id] : (t.columnCount !== undefined ? t.columnCount : defaultColumnCount);
+                          const curCols = columnOverrides[t.id] !== undefined ? columnOverrides[t.id] : (t.columnCount !== undefined ? t.columnCount : (globalLayout === 2 ? 2 : 1));
                           
                           // Diverse color mapping based on index
                           const colors = ['orange', 'blue', 'emerald', 'rose', 'violet', 'amber', 'indigo', 'cyan'];
@@ -2415,17 +2336,15 @@ ${componentLogic}
 
                   {/* Templates Right (Half) */}
                   <div className="lg:col-span-1 space-y-4">
-                    <div className="flex items-center justify-between px-2 mb-4">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Templates (N-Z)</h3>
-                        <div className="h-1 w-4 bg-orange-500 rounded-full"></div>
-                      </div>
+                    <div className="flex items-center gap-2 px-2 mb-4 justify-end">
+                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Templates (N-Z)</h3>
+                      <div className="h-1 w-4 bg-orange-500 rounded-full"></div>
                     </div>
                     <div className="space-y-3">
                       {instructionTemplates
-                        .filter(t => t.category?.toUpperCase() === activeModule.toUpperCase() || t.category?.toUpperCase() === 'ALL')
+                        .filter(t => t.category?.toUpperCase() === activeModule.toUpperCase())
                         .sort((a, b) => {
-                          const order = ['g_mcq', 'g_correct_incorrect', 'g_circle', 'g_best_rewrite', 'g_complete_sentences', 'g_pair', 'g_spelling'];
+                          const order = ['g_mcq', 'g_correct_incorrect', 'g_circle', 'g_complete_sentences', 'g_pair', 'g_spelling'];
                           const aIdx = order.indexOf(a.id);
                           const bIdx = order.indexOf(b.id);
                           if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
@@ -2433,7 +2352,7 @@ ${componentLogic}
                           if (bIdx !== -1) return 1;
                           return 0;
                         })
-                        .slice(Math.ceil(instructionTemplates.filter(t => t.category?.toUpperCase() === activeModule.toUpperCase() || t.category?.toUpperCase() === 'ALL').length / 2))
+                        .slice(Math.ceil(instructionTemplates.filter(t => t.category?.toUpperCase() === activeModule.toUpperCase()).length / 2))
                         .map((t, idx) => {
                           const isSelected = selectedInstructionIds.includes(t.id);
                           const cat = t.category?.toUpperCase();
@@ -2827,8 +2746,14 @@ ${componentLogic}
                   
                   <div className="relative flex justify-center">
                     <div className={`w-full max-w-[500px] aspect-[1/1.414] bg-white shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] rounded-sm overflow-hidden transition-all duration-700 ${
-                      tableStyle === 'list' ? 'layout-lined' : 
-                      tableStyle === 'grid' ? 'layout-grid' : ''
+                      baseLayout === 1 ? 'layout-lined' : 
+                      baseLayout === 2 ? 'layout-grid' : 
+                      baseLayout === 3 ? 'layout-vertical-middle' :
+                      baseLayout === 4 ? 'layout-rulers' : 
+                      baseLayout === 5 ? 'layout-s1' :
+                      baseLayout === 6 ? 'layout-s2' :
+                      baseLayout === 7 ? 'layout-s3' :
+                      baseLayout === 8 ? 'layout-s4' : ''
                     } ${
                       globalLayout === 0 ? 'layout-clean-white' :
                       globalLayout === 1 ? 'layout-orange-mix' :
@@ -2891,6 +2816,75 @@ ${componentLogic}
         </section>
       )}
 
+      {viewMode === 'instruction_design' && (
+        <section 
+          style={{ 
+            marginLeft: isSidebarOpen && sidebarSide === 'left' ? (windowWidth >= 1024 ? `${sidebarWidth}px` : '0px') : '0px',
+            marginRight: isSidebarOpen && sidebarSide === 'right' ? (windowWidth >= 1024 ? `${sidebarWidth}px` : '0px') : '0px'
+          }}
+          className="flex-1 flex flex-col overflow-hidden animate-in fade-in duration-500 bg-slate-50 transition-all duration-300"
+        >
+          <div className="p-4 lg:p-6 bg-white border-b border-slate-200 flex flex-wrap gap-4 justify-between items-center z-10 no-print shadow-sm">
+            <button onClick={() => setViewMode('generator')} className="border border-slate-200 text-slate-600 px-6 lg:px-8 py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-4 group transition-all">
+              <i className="fa-solid fa-arrow-left group-hover:-translate-x-1 transition-transform"></i> WORKSPACE
+            </button>
+            <div className="flex-1 text-center">
+              <h2 className="text-slate-800 font-bold uppercase tracking-widest text-[12px]">Instruction Design Workspace</h2>
+            </div>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => setViewMode('generator')}
+                className="px-6 py-3 bg-rose-600 text-white rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-rose-700 shadow-sm flex items-center gap-2 transition-all"
+              >
+                <i className="fa-solid fa-check"></i> Save & Apply
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 bg-slate-50 overflow-y-auto p-8 no-scrollbar">
+            <div className="max-w-4xl mx-auto space-y-10">
+              <div className="bg-white rounded-[32px] p-10 border border-slate-100 shadow-sm">
+                <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight">Instruction Header Architect</h3>
+                <p className="text-sm text-slate-500 mb-8">Choose a style for the "PART A: ..." instruction headers.</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {[
+                    { id: 0, name: 'Classic Dark', style: { backgroundColor: '#334155', color: 'white', padding: '10px', fontWeight: 'bold', textAlign: 'center' } },
+                    { id: 1, name: 'Soft Blue', style: { backgroundColor: '#dbeafe', color: '#1e3a8a', padding: '10px', fontWeight: 'bold', borderLeft: '4pt solid #1e3a8a' } },
+                    { id: 2, name: 'Soft Green', style: { backgroundColor: '#dcfce7', color: '#064e3b', padding: '10px', fontWeight: 'bold', borderLeft: '4pt solid #064e3b' } },
+                    { id: 3, name: 'Soft Rose', style: { backgroundColor: '#fee2e2', color: '#7f1d1d', padding: '10px', fontWeight: 'bold', borderLeft: '4pt solid #7f1d1d' } },
+                    { id: 4, name: 'Minimalist Border', style: { border: '1.5pt solid #334155', color: '#334155', padding: '10px', fontWeight: 'bold', textAlign: 'center' } },
+                    { id: 5, name: 'Underlined Bold', style: { borderBottom: '2.5pt solid #334155', color: '#334155', padding: '10px 0', fontWeight: '900', fontSize: '14pt' } },
+                    { id: 6, name: 'Double Underline', style: { borderBottom: '4pt double #334155', color: '#334155', padding: '10px 0', fontWeight: 'bold' } },
+                    { id: 7, name: 'Modern Slate', style: { backgroundColor: '#f1f5f9', color: '#1e293b', padding: '10px', fontWeight: 'bold', borderRadius: '8px' } },
+                    { id: 8, name: 'Indigo Accent', style: { backgroundColor: '#e0e7ff', color: '#3730a3', padding: '10px', fontWeight: 'bold', borderRight: '4pt solid #3730a3' } },
+                    { id: 9, name: 'Amber Box', style: { backgroundColor: '#fffbeb', color: '#92400e', padding: '10px', fontWeight: 'bold', border: '1pt dashed #92400e' } },
+                    { id: 10, name: 'Clean Transparent', style: { color: '#334155', padding: '10px 0', fontWeight: 'bold', borderBottom: '1pt solid #e2e8f0' } },
+                    { id: 11, name: 'Gradient Night', style: { background: 'linear-gradient(90deg, #1e293b, #475569)', color: 'white', padding: '12px', fontWeight: 'bold', textAlign: 'center', borderRadius: '4px' } },
+                    { id: 12, name: 'Neon Emerald', style: { border: '2pt solid #10b981', color: '#065f46', padding: '10px', fontWeight: '900', textAlign: 'center', backgroundColor: '#ecfdf5' } },
+                    { id: 13, name: 'Brutalist Yellow', style: { border: '3pt solid black', backgroundColor: '#facc15', color: 'black', padding: '10px', fontWeight: '900', textTransform: 'uppercase' } },
+                    { id: 14, name: 'Mix Styles', style: { background: 'repeating-linear-gradient(45deg, #f1f5f9, #f1f5f9 10px, #ffffff 10px, #ffffff 20px)', border: '1pt solid #cbd5e1', color: '#334155', padding: '10px', fontWeight: 'bold', textAlign: 'center' } }
+                  ].map((style) => (
+                    <div 
+                      key={style.id}
+                      onClick={() => setInstructionHeaderStyle(style.id)}
+                      className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${instructionHeaderStyle === style.id ? 'border-rose-500 bg-rose-50/30 shadow-md' : 'border-slate-200 hover:border-rose-300 bg-white'}`}
+                    >
+                      <div className="flex justify-between items-center mb-4">
+                        <h5 className="font-bold text-slate-700">{style.name}</h5>
+                        {instructionHeaderStyle === style.id && <div className="h-6 w-6 bg-rose-500 text-white rounded-full flex items-center justify-center text-xs"><i className="fa-solid fa-check"></i></div>}
+                      </div>
+                      <div className="bg-white p-4 border border-slate-100 rounded-xl">
+                        <div style={style.style as any}>PART A: CHOOSE THE BEST OPTION</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {viewMode === 'design_test_style' && (
         <section 
           style={{ 
@@ -2923,23 +2917,15 @@ ${componentLogic}
                     <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight">Design Test Style Library</h3>
                     <p className="text-sm text-slate-500">Customize the visual structure and default formatting for each question type.</p>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <button 
-                      onClick={handleAddCustomExerciseType}
-                      className="px-6 py-3 bg-slate-100 text-slate-700 rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-slate-200 shadow-sm flex items-center gap-2 transition-all"
-                    >
-                      <i className="fa-solid fa-plus"></i> Add New Exercise Type
-                    </button>
-                    <button 
-                      onClick={() => {
-                        setSettingsTab('FORMAT_DESIGN');
-                        setShowSettings(true);
-                      }}
-                      className="px-6 py-3 bg-blue-600 text-white rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-blue-700 shadow-lg shadow-blue-100 flex items-center gap-2 transition-all"
-                    >
-                      <i className="fa-solid fa-wand-magic-sparkles"></i> Create Custom Format
-                    </button>
-                  </div>
+                  <button 
+                    onClick={() => {
+                      setSettingsTab('FORMAT_DESIGN');
+                      setShowSettings(true);
+                    }}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-blue-700 shadow-lg shadow-blue-100 flex items-center gap-2 transition-all"
+                  >
+                    <i className="fa-solid fa-wand-magic-sparkles"></i> Create Custom Format
+                  </button>
                 </div>
                 
                 <div className="flex gap-2 mb-10 border-b border-slate-200 pb-4">
@@ -3215,42 +3201,6 @@ ${componentLogic}
                   </CollapsibleSection>
                 </div>
 
-                {/* Table Styles Section */}
-                <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm">
-                  <CollapsibleSection
-                    title="Table Styles"
-                    subtitle="Choose the visual style for tables and columns in your exercises."
-                    icon="fa-table"
-                    iconBg="bg-purple-100"
-                    iconColor="text-purple-600"
-                    isCollapsed={!!collapsedSections['table_styles']}
-                    onToggle={() => setCollapsedSections(prev => ({ ...prev, table_styles: !prev.table_styles }))}
-                  >
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
-                      {[
-                        { id: 'plain', name: 'Plain Tables', desc: 'Clean layout with minimal borders.', icon: 'fa-table-cells-large' },
-                        { id: 'grid', name: 'Grid Tables', desc: 'Standard grid with all borders visible.', icon: 'fa-table-cells' },
-                        { id: 'list', name: 'List Tables', desc: 'Horizontal lines only, list style.', icon: 'fa-table-list' },
-                      ].map((style) => (
-                        <div 
-                          key={style.id}
-                          onClick={() => setTableStyle(style.id)}
-                          className={`p-8 rounded-[40px] border-2 cursor-pointer transition-all ${tableStyle === style.id ? 'border-purple-500 bg-purple-50/30 shadow-xl scale-[1.02]' : 'border-slate-100 bg-white hover:border-purple-200 shadow-sm'}`}
-                        >
-                          <div className="flex justify-between items-start mb-6">
-                            <div className={`h-14 w-14 rounded-2xl flex items-center justify-center text-2xl ${tableStyle === style.id ? 'bg-purple-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
-                              <i className={`fa-solid ${style.icon}`}></i>
-                            </div>
-                            {tableStyle === style.id && <div className="h-8 w-8 bg-purple-500 text-white rounded-full flex items-center justify-center shadow-lg animate-in zoom-in"><i className="fa-solid fa-check"></i></div>}
-                          </div>
-                          <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight mb-2">{style.name}</h4>
-                          <p className="text-xs font-medium text-slate-500 leading-relaxed">{style.desc}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </CollapsibleSection>
-                </div>
-
                 {/* Header & Footer Styles Section */}
                   <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm">
                     <CollapsibleSection
@@ -3464,8 +3414,82 @@ ${componentLogic}
                   </CollapsibleSection>
                 </div>
 
-                  {/* Custom Exercise Types Library removed as per user request */}
-
+                  {/* Custom Exercise Types Library */}
+                  <div className="bg-slate-50 p-10 rounded-[40px] border border-slate-100">
+                    <CollapsibleSection
+                      title="Custom Exercise Types Library"
+                      subtitle="Add and manage your own exercise categories"
+                      icon="fa-folder-plus"
+                      iconBg="bg-purple-100"
+                      iconColor="text-purple-600"
+                      isCollapsed={!!collapsedSections['custom_exercise_library']}
+                      onToggle={() => setCollapsedSections(prev => ({ ...prev, custom_exercise_library: !prev.custom_exercise_library }))}
+                      rightElement={
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const name = prompt("Enter new exercise type name (e.g., 'Rewrite the sentences'):");
+                            if (name) {
+                              const category = prompt("Enter category (Grammar, Vocabulary, Reading, Mixed, Generals, Custom):") as RuleCategory;
+                              setCustomExerciseTypes(prev => [...prev, { id: 'custom_' + Date.now(), name, category: category || 'Custom' }]);
+                            }
+                          }}
+                          className="px-6 py-2 bg-purple-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-purple-700 shadow-lg shadow-purple-100 transition-all"
+                        >
+                          <i className="fa-solid fa-plus mr-2"></i> Add New Type
+                        </button>
+                      }
+                    >
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+                        {customExerciseTypes.map(type => (
+                          <div key={type.id} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:border-purple-300 transition-all group">
+                            <div className="flex justify-between items-start mb-4">
+                              <span className="px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-[8px] font-black uppercase tracking-widest">{type.category}</span>
+                              <div className="flex gap-1">
+                                <button 
+                                  onClick={() => {
+                                    const newName = prompt("Enter new name for this exercise type:", type.name);
+                                    if (newName) {
+                                      setCustomExerciseTypes(prev => prev.map(t => t.id === type.id ? { ...t, name: newName } : t));
+                                    }
+                                  }}
+                                  className="h-6 w-6 text-slate-300 hover:text-blue-500 transition-colors"
+                                  title="Rename"
+                                >
+                                  <i className="fa-solid fa-pen text-[10px]"></i>
+                                </button>
+                                <button 
+                                  onClick={() => setCustomExerciseTypes(prev => prev.filter(t => t.id !== type.id))}
+                                  className="h-6 w-6 text-slate-300 hover:text-rose-500 transition-colors"
+                                  title="Delete"
+                                >
+                                  <i className="fa-solid fa-trash text-[10px]"></i>
+                                </button>
+                              </div>
+                            </div>
+                            <h5 className="text-[12px] font-black text-slate-900 uppercase mb-4">{type.name}</h5>
+                            <div className="flex flex-col gap-2">
+                              {type.styleId && (
+                                <div className="px-3 py-2 bg-purple-50 text-purple-600 rounded-xl text-[9px] font-bold flex items-center gap-2">
+                                  <i className="fa-solid fa-check-circle"></i> Custom Format Linked
+                                </div>
+                              )}
+                              <button 
+                                onClick={() => {
+                                  setDesignTargetTypeId(type.id);
+                                  setSettingsTab('FORMAT_DESIGN');
+                                  setShowSettings(true);
+                                }}
+                                className="w-full py-2 bg-slate-50 text-slate-400 rounded-xl text-[9px] font-black uppercase hover:bg-purple-50 hover:text-purple-600 transition-all border border-dashed border-slate-200"
+                              >
+                                {type.styleId ? 'Update Format' : 'Design Format'}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CollapsibleSection>
+                  </div>
 
                   {/* True or False Design Samples */}
                   <div className="space-y-6 border-t border-slate-100 pt-8">
@@ -3556,56 +3580,19 @@ ${componentLogic}
                           key={design.id}
                           onClick={() => {
                             setPaperStyles(prev => ({ ...prev, tf: design.id }));
+                            alert(`Applied custom T/F design: ${design.name}`);
                           }}
-                          className={`p-6 rounded-2xl border-2 cursor-pointer transition-all group relative ${paperStyles.tf === design.id ? 'border-blue-500 bg-blue-50/30 shadow-md' : 'border-slate-200 hover:border-blue-300 bg-white'}`}
+                          className="p-6 rounded-2xl border-2 border-blue-100 bg-white hover:border-blue-300 cursor-pointer transition-all shadow-sm group"
                         >
                           <div className="flex justify-between items-center mb-4">
                             <h5 className="font-bold text-slate-700 uppercase tracking-widest text-xs">Custom: {design.name}</h5>
-                            <div className="flex gap-1">
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const newName = prompt("Enter new name for this style:", design.name);
-                                  if (newName) {
-                                    setCustomDesigns(prev => prev.map(d => d.id === design.id ? { ...d, name: newName } : d));
-                                  }
-                                }}
-                                className="h-6 w-6 text-slate-300 hover:text-blue-500 transition-colors"
-                              >
-                                <i className="fa-solid fa-pen text-[10px]"></i>
-                              </button>
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteCustomDesign(design.id);
-                                }}
-                                className="h-6 w-6 text-slate-300 hover:text-rose-500 transition-colors"
-                              >
-                                <i className="fa-solid fa-trash text-[10px]"></i>
-                              </button>
-                            </div>
+                            <div className="h-6 w-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-[10px]"><i className="fa-solid fa-wand-magic-sparkles"></i></div>
                           </div>
                           <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-[10px] text-slate-400 italic">
                             Custom formatting and AI instructions applied.
                           </div>
-                          {paperStyles.tf === design.id && <div className="absolute top-2 right-2 h-6 w-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs shadow-sm"><i className="fa-solid fa-check"></i></div>}
                         </div>
                       ))}
-
-                      {/* Add New T/F Style Card */}
-                      <div 
-                        onClick={() => {
-                          setDesignTargetTypeId('true_false');
-                          setSettingsTab('FORMAT_DESIGN');
-                          setShowSettings(true);
-                        }}
-                        className="p-6 rounded-2xl border-2 border-dashed border-slate-200 hover:border-blue-400 hover:bg-blue-50/30 cursor-pointer transition-all flex flex-col items-center justify-center gap-3 group"
-                      >
-                        <div className="h-12 w-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center group-hover:bg-blue-100 group-hover:text-blue-600 transition-all">
-                          <i className="fa-solid fa-plus text-xl"></i>
-                        </div>
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-blue-600">Add New Style</span>
-                      </div>
                     </div>
                   </div>
 
@@ -3698,78 +3685,33 @@ ${componentLogic}
                           key={design.id}
                           onClick={() => {
                             setPaperStyles(prev => ({ ...prev, correctIncorrect: design.id }));
+                            alert(`Applied custom C/I design: ${design.name}`);
                           }}
-                          className={`p-6 rounded-2xl border-2 transition-all cursor-pointer group relative ${paperStyles.correctIncorrect === design.id ? 'border-emerald-500 bg-emerald-50/30 shadow-md' : 'border-slate-200 hover:border-emerald-300 bg-white'}`}
+                          className={`p-6 rounded-2xl border-2 transition-all cursor-pointer group ${paperStyles.correctIncorrect === design.id ? 'border-emerald-500 bg-emerald-50/30 shadow-md' : 'border-slate-200 hover:border-emerald-300 bg-white'}`}
                         >
                           <div className="flex justify-between items-center mb-4">
                             <h5 className="font-bold text-slate-700 uppercase tracking-widest text-xs">Custom: {design.name}</h5>
-                            <div className="flex gap-1">
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const newName = prompt("Enter new name for this style:", design.name);
-                                  if (newName) {
-                                    setCustomDesigns(prev => prev.map(d => d.id === design.id ? { ...d, name: newName } : d));
-                                  }
-                                }}
-                                className="h-6 w-6 text-slate-300 hover:text-blue-500 transition-colors"
-                              >
-                                <i className="fa-solid fa-pen text-[10px]"></i>
-                              </button>
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteCustomDesign(design.id);
-                                }}
-                                className="h-6 w-6 text-slate-300 hover:text-rose-500 transition-colors"
-                              >
-                                <i className="fa-solid fa-trash text-[10px]"></i>
-                              </button>
-                            </div>
+                            {paperStyles.correctIncorrect === design.id ? (
+                              <div className="h-6 w-6 bg-emerald-500 text-white rounded-full flex items-center justify-center text-xs"><i className="fa-solid fa-check"></i></div>
+                            ) : (
+                              <div className="h-6 w-6 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-[10px]"><i className="fa-solid fa-wand-magic-sparkles"></i></div>
+                            )}
                           </div>
                           <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-[10px] text-slate-400 italic">
                             Custom formatting and AI instructions applied.
                           </div>
-                          {paperStyles.correctIncorrect === design.id && <div className="absolute top-2 right-2 h-6 w-6 bg-emerald-500 text-white rounded-full flex items-center justify-center text-xs shadow-sm"><i className="fa-solid fa-check"></i></div>}
                         </div>
                       ))}
-
-                      {/* Add New C/I Style Card */}
-                      <div 
-                        onClick={() => {
-                          setDesignTargetTypeId('correct_incorrect');
-                          setSettingsTab('FORMAT_DESIGN');
-                          setShowSettings(true);
-                        }}
-                        className="p-6 rounded-2xl border-2 border-dashed border-slate-200 hover:border-emerald-400 hover:bg-emerald-50/30 cursor-pointer transition-all flex flex-col items-center justify-center gap-3 group"
-                      >
-                        <div className="h-12 w-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-all">
-                          <i className="fa-solid fa-plus text-xl"></i>
-                        </div>
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-emerald-600">Add New Style</span>
-                      </div>
                     </div>
                   </div>
 
                   {/* Circle Design Samples */}
                   <div className="space-y-6 border-t border-slate-100 pt-8">
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center">
-                          <i className="fa-solid fa-circle-dot"></i>
-                        </div>
-                        <h4 className="text-lg font-bold text-slate-800 uppercase tracking-widest">Circle Designs</h4>
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="h-10 w-10 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center">
+                        <i className="fa-solid fa-circle-dot"></i>
                       </div>
-                      <button 
-                        onClick={() => {
-                          setDesignTargetTypeId('circle');
-                          setSettingsTab('FORMAT_DESIGN');
-                          setShowSettings(true);
-                        }}
-                        className="px-4 py-2 bg-purple-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-purple-700 transition-all flex items-center gap-2"
-                      >
-                        <i className="fa-solid fa-plus"></i> Add NEW
-                      </button>
+                      <h4 className="text-lg font-bold text-slate-800 uppercase tracking-widest">Circle Designs</h4>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -3862,63 +3804,6 @@ ${componentLogic}
                           <div>2. She _______________ (go) to the store yesterday.</div>
                         </div>
                       </div>
-
-                      {/* Custom Sentence Completion Designs */}
-                      {customDesigns.filter(d => d.type === 'sentence_completion' || d.type === 'sentenceCompletion').map(design => (
-                        <div 
-                          key={design.id}
-                          onClick={() => {
-                            setPaperStyles(prev => ({ ...prev, sentenceCompletion: design.id }));
-                          }}
-                          className={`p-6 rounded-2xl border-2 transition-all cursor-pointer group relative ${paperStyles.sentenceCompletion === design.id ? 'border-indigo-500 bg-indigo-50/30 shadow-md' : 'border-slate-200 hover:border-indigo-300 bg-white'}`}
-                        >
-                          <div className="flex justify-between items-center mb-4">
-                            <h5 className="font-bold text-slate-700 uppercase tracking-widest text-xs">Custom: {design.name}</h5>
-                            <div className="flex gap-1">
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const newName = prompt("Enter new name for this style:", design.name);
-                                  if (newName) {
-                                    setCustomDesigns(prev => prev.map(d => d.id === design.id ? { ...d, name: newName } : d));
-                                  }
-                                }}
-                                className="h-6 w-6 text-slate-300 hover:text-blue-500 transition-colors"
-                              >
-                                <i className="fa-solid fa-pen text-[10px]"></i>
-                              </button>
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteCustomDesign(design.id);
-                                }}
-                                className="h-6 w-6 text-slate-300 hover:text-rose-500 transition-colors"
-                              >
-                                <i className="fa-solid fa-trash text-[10px]"></i>
-                              </button>
-                            </div>
-                          </div>
-                          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-[10px] text-slate-400 italic">
-                            Custom formatting and AI instructions applied.
-                          </div>
-                          {paperStyles.sentenceCompletion === design.id && <div className="absolute top-2 right-2 h-6 w-6 bg-indigo-500 text-white rounded-full flex items-center justify-center text-xs shadow-sm"><i className="fa-solid fa-check"></i></div>}
-                        </div>
-                      ))}
-
-                      {/* Add New Sentence Completion Style Card */}
-                      <div 
-                        onClick={() => {
-                          setDesignTargetTypeId('sentence_completion');
-                          setSettingsTab('FORMAT_DESIGN');
-                          setShowSettings(true);
-                        }}
-                        className="p-6 rounded-2xl border-2 border-dashed border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/30 cursor-pointer transition-all flex flex-col items-center justify-center gap-3 group"
-                      >
-                        <div className="h-12 w-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-all">
-                          <i className="fa-solid fa-plus text-xl"></i>
-                        </div>
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-indigo-600">Add New Style</span>
-                      </div>
                     </div>
                   </div>
 
@@ -3966,235 +3851,6 @@ ${componentLogic}
                           </div>
                           <div>1. My favorite fruit is the _______________.</div>
                         </div>
-                      </div>
-
-                      {/* Custom Word Box Designs */}
-                      {customDesigns.filter(d => d.type === 'word_box' || d.type === 'wordBox').map(design => (
-                        <div 
-                          key={design.id}
-                          onClick={() => {
-                            setPaperStyles(prev => ({ ...prev, wordBox: design.id }));
-                          }}
-                          className={`p-6 rounded-2xl border-2 transition-all cursor-pointer group relative ${paperStyles.wordBox === design.id ? 'border-teal-500 bg-teal-50/30 shadow-md' : 'border-slate-200 hover:border-teal-300 bg-white'}`}
-                        >
-                          <div className="flex justify-between items-center mb-4">
-                            <h5 className="font-bold text-slate-700 uppercase tracking-widest text-xs">Custom: {design.name}</h5>
-                            <div className="flex gap-1">
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const newName = prompt("Enter new name for this style:", design.name);
-                                  if (newName) {
-                                    setCustomDesigns(prev => prev.map(d => d.id === design.id ? { ...d, name: newName } : d));
-                                  }
-                                }}
-                                className="h-6 w-6 text-slate-300 hover:text-blue-500 transition-colors"
-                              >
-                                <i className="fa-solid fa-pen text-[10px]"></i>
-                              </button>
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteCustomDesign(design.id);
-                                }}
-                                className="h-6 w-6 text-slate-300 hover:text-rose-500 transition-colors"
-                              >
-                                <i className="fa-solid fa-trash text-[10px]"></i>
-                              </button>
-                            </div>
-                          </div>
-                          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-[10px] text-slate-400 italic">
-                            Custom formatting and AI instructions applied.
-                          </div>
-                          {paperStyles.wordBox === design.id && <div className="absolute top-2 right-2 h-6 w-6 bg-teal-500 text-white rounded-full flex items-center justify-center text-xs shadow-sm"><i className="fa-solid fa-check"></i></div>}
-                        </div>
-                      ))}
-
-                      {/* Add New Word Box Style Card */}
-                      <div 
-                        onClick={() => {
-                          setDesignTargetTypeId('word_box');
-                          setSettingsTab('FORMAT_DESIGN');
-                          setShowSettings(true);
-                        }}
-                        className="p-6 rounded-2xl border-2 border-dashed border-slate-200 hover:border-teal-400 hover:bg-teal-50/30 cursor-pointer transition-all flex flex-col items-center justify-center gap-3 group"
-                      >
-                        <div className="h-12 w-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center group-hover:bg-teal-100 group-hover:text-teal-600 transition-all">
-                          <i className="fa-solid fa-plus text-xl"></i>
-                        </div>
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-teal-600">Add New Style</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Cloze Design Samples */}
-                  <div className="space-y-6 border-t border-slate-100 pt-8">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="h-10 w-10 bg-cyan-100 text-cyan-600 rounded-xl flex items-center justify-center">
-                        <i className="fa-solid fa-align-left"></i>
-                      </div>
-                      <h4 className="text-lg font-bold text-slate-800 uppercase tracking-widest">Cloze Designs</h4>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Cloze Design 1 */}
-                      <div 
-                        onClick={() => setPaperStyles(prev => ({ ...prev, cloze: 0 }))}
-                        className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${paperStyles.cloze === 0 ? 'border-cyan-500 bg-cyan-50/30 shadow-md' : 'border-slate-200 hover:border-cyan-300 bg-white'}`}
-                      >
-                        <div className="flex justify-between items-center mb-4">
-                          <h5 className="font-bold text-slate-700">Design 1: Paragraph Style</h5>
-                          {paperStyles.cloze === 0 && <div className="h-6 w-6 bg-cyan-500 text-white rounded-full flex items-center justify-center text-xs"><i className="fa-solid fa-check"></i></div>}
-                        </div>
-                        <div className="bg-white p-4 border border-slate-200 rounded-xl font-serif text-sm leading-relaxed">
-                          Yesterday, I (1) ____________ to the park. The weather (2) ____________ beautiful, and many children (3) ____________ playing games.
-                        </div>
-                      </div>
-
-                      {/* Custom Cloze Designs */}
-                      {customDesigns.filter(d => d.type === 'cloze' || d.type === 'cloze_paragraph').map(design => (
-                        <div 
-                          key={design.id}
-                          onClick={() => {
-                            setPaperStyles(prev => ({ ...prev, cloze: design.id }));
-                          }}
-                          className={`p-6 rounded-2xl border-2 transition-all cursor-pointer group relative ${paperStyles.cloze === design.id ? 'border-cyan-500 bg-cyan-50/30 shadow-md' : 'border-slate-200 hover:border-cyan-300 bg-white'}`}
-                        >
-                          <div className="flex justify-between items-center mb-4">
-                            <h5 className="font-bold text-slate-700 uppercase tracking-widest text-xs">Custom: {design.name}</h5>
-                            <div className="flex gap-1">
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const newName = prompt("Enter new name for this style:", design.name);
-                                  if (newName) {
-                                    setCustomDesigns(prev => prev.map(d => d.id === design.id ? { ...d, name: newName } : d));
-                                  }
-                                }}
-                                className="h-6 w-6 text-slate-300 hover:text-blue-500 transition-colors"
-                              >
-                                <i className="fa-solid fa-pen text-[10px]"></i>
-                              </button>
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteCustomDesign(design.id);
-                                }}
-                                className="h-6 w-6 text-slate-300 hover:text-rose-500 transition-colors"
-                              >
-                                <i className="fa-solid fa-trash text-[10px]"></i>
-                              </button>
-                            </div>
-                          </div>
-                          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-[10px] text-slate-400 italic">
-                            Custom formatting and AI instructions applied.
-                          </div>
-                          {paperStyles.cloze === design.id && <div className="absolute top-2 right-2 h-6 w-6 bg-cyan-500 text-white rounded-full flex items-center justify-center text-xs shadow-sm"><i className="fa-solid fa-check"></i></div>}
-                        </div>
-                      ))}
-
-                      {/* Add New Cloze Style Card */}
-                      <div 
-                        onClick={() => {
-                          setDesignTargetTypeId('cloze');
-                          setSettingsTab('FORMAT_DESIGN');
-                          setShowSettings(true);
-                        }}
-                        className="p-6 rounded-2xl border-2 border-dashed border-slate-200 hover:border-cyan-400 hover:bg-cyan-50/30 cursor-pointer transition-all flex flex-col items-center justify-center gap-3 group"
-                      >
-                        <div className="h-12 w-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center group-hover:bg-cyan-100 group-hover:text-cyan-600 transition-all">
-                          <i className="fa-solid fa-plus text-xl"></i>
-                        </div>
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-cyan-600">Add New Style</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Double MCQ Design Samples */}
-                  <div className="space-y-6 border-t border-slate-100 pt-8">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="h-10 w-10 bg-rose-100 text-rose-600 rounded-xl flex items-center justify-center">
-                        <i className="fa-solid fa-layer-group"></i>
-                      </div>
-                      <h4 className="text-lg font-bold text-slate-800 uppercase tracking-widest">Double MCQ Designs</h4>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Double MCQ Design 1 */}
-                      <div 
-                        onClick={() => setPaperStyles(prev => ({ ...prev, doubleMcq: 0 }))}
-                        className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${paperStyles.doubleMcq === 0 ? 'border-rose-500 bg-rose-50/30 shadow-md' : 'border-slate-200 hover:border-rose-300 bg-white'}`}
-                      >
-                        <div className="flex justify-between items-center mb-4">
-                          <h5 className="font-bold text-slate-700">Design 1: Inline Pairs</h5>
-                          {paperStyles.doubleMcq === 0 && <div className="h-6 w-6 bg-rose-500 text-white rounded-full flex items-center justify-center text-xs"><i className="fa-solid fa-check"></i></div>}
-                        </div>
-                        <div className="bg-white p-4 border border-slate-200 rounded-xl font-serif text-sm space-y-3">
-                          <div>1. If I (1) ________ more time, I (2) ________ to the party.</div>
-                          <div className="grid grid-cols-2 gap-2 text-[10px] font-bold text-rose-600">
-                            <span>A. have / will go</span>
-                            <span>B. had / would go</span>
-                            <span>C. have / would go</span>
-                            <span>D. had / will go</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Custom Double MCQ Designs */}
-                      {customDesigns.filter(d => d.type === 'double_mcq' || d.id === 'g_pair').map(design => (
-                        <div 
-                          key={design.id}
-                          onClick={() => {
-                            setPaperStyles(prev => ({ ...prev, doubleMcq: design.id }));
-                          }}
-                          className={`p-6 rounded-2xl border-2 transition-all cursor-pointer group relative ${paperStyles.doubleMcq === design.id ? 'border-rose-500 bg-rose-50/30 shadow-md' : 'border-slate-200 hover:border-rose-300 bg-white'}`}
-                        >
-                          <div className="flex justify-between items-center mb-4">
-                            <h5 className="font-bold text-slate-700 uppercase tracking-widest text-xs">Custom: {design.name}</h5>
-                            <div className="flex gap-1">
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const newName = prompt("Enter new name for this style:", design.name);
-                                  if (newName) {
-                                    setCustomDesigns(prev => prev.map(d => d.id === design.id ? { ...d, name: newName } : d));
-                                  }
-                                }}
-                                className="h-6 w-6 text-slate-300 hover:text-blue-500 transition-colors"
-                              >
-                                <i className="fa-solid fa-pen text-[10px]"></i>
-                              </button>
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteCustomDesign(design.id);
-                                }}
-                                className="h-6 w-6 text-slate-300 hover:text-rose-500 transition-colors"
-                              >
-                                <i className="fa-solid fa-trash text-[10px]"></i>
-                              </button>
-                            </div>
-                          </div>
-                          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-[10px] text-slate-400 italic">
-                            Custom formatting and AI instructions applied.
-                          </div>
-                          {paperStyles.doubleMcq === design.id && <div className="absolute top-2 right-2 h-6 w-6 bg-rose-500 text-white rounded-full flex items-center justify-center text-xs shadow-sm"><i className="fa-solid fa-check"></i></div>}
-                        </div>
-                      ))}
-
-                      {/* Add New Double MCQ Style Card */}
-                      <div 
-                        onClick={() => {
-                          setDesignTargetTypeId('double_mcq');
-                          setSettingsTab('FORMAT_DESIGN');
-                          setShowSettings(true);
-                        }}
-                        className="p-6 rounded-2xl border-2 border-dashed border-slate-200 hover:border-rose-400 hover:bg-rose-50/30 cursor-pointer transition-all flex flex-col items-center justify-center gap-3 group"
-                      >
-                        <div className="h-12 w-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center group-hover:bg-rose-100 group-hover:text-rose-600 transition-all">
-                          <i className="fa-solid fa-plus text-xl"></i>
-                        </div>
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-rose-600">Add New Style</span>
                       </div>
                     </div>
                   </div>
@@ -4244,8 +3900,6 @@ ${componentLogic}
                               <ul className="space-y-2">
                                 <li className="text-[10px] font-bold text-slate-600 uppercase flex items-center gap-2"><i className="fa-solid fa-check text-emerald-500"></i> Multiple Choice (MCQ)</li>
                                 <li className="text-[10px] font-bold text-slate-600 uppercase flex items-center gap-2"><i className="fa-solid fa-check text-emerald-500"></i> Correct / Incorrect</li>
-                                <li className="text-[10px] font-bold text-slate-600 uppercase flex items-center gap-2"><i className="fa-solid fa-check text-emerald-500"></i> Cloze Passage</li>
-                                <li className="text-[10px] font-bold text-slate-600 uppercase flex items-center gap-2"><i className="fa-solid fa-check text-emerald-500"></i> Double MCQ</li>
                               </ul>
                             </div>
                             <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
@@ -4708,10 +4362,7 @@ ${componentLogic}
             </div>
             <div className="flex gap-2">
               <button 
-                onClick={() => {
-                  setBrandSettings(prev => ({ ...prev, headerStyle: paperDesign }));
-                  setViewMode('generator');
-                }}
+                onClick={() => setViewMode('generator')}
                 className="px-6 py-3 bg-blue-600 text-white rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-blue-700 shadow-sm flex items-center gap-2 transition-all"
               >
                 <i className="fa-solid fa-check"></i> Save & Set Default
@@ -4722,39 +4373,8 @@ ${componentLogic}
             <div className="max-w-4xl mx-auto space-y-10">
               <div className="bg-white rounded-[32px] p-10 border border-slate-100 shadow-sm">
                 <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight">Header & Footer Architect</h3>
-                <p className="text-sm text-slate-500 mb-8">Select from professional header and footer designs for your paper test.</p>
+                <p className="text-sm text-slate-500 mb-8">Select from 10 professional header and footer designs for your paper test.</p>
                 
-                <div className="bg-slate-50 p-8 rounded-3xl border border-slate-100 mb-10 space-y-8">
-                  <h4 className="text-[11px] font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                    <i className="fa-solid fa-sliders text-orange-500"></i> Advanced Header Customization
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-4">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Custom Header Text (Overrides Default)</label>
-                      <input 
-                        value={brandSettings.customHeaderText || ''} 
-                        onChange={e => setBrandSettings({ ...brandSettings, customHeaderText: e.target.value })} 
-                        className="w-full bg-white border border-slate-200 rounded-2xl px-6 py-4 outline-none focus:border-orange-500 font-bold text-slate-700 shadow-sm" 
-                        placeholder="e.g. FINAL TERM EXAMINATION - SEMESTER 1" 
-                      />
-                    </div>
-                    <div className="space-y-4">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Header Ruler Style</label>
-                      <div className="flex bg-white p-1.5 rounded-2xl gap-1 overflow-x-auto no-scrollbar border border-slate-200 shadow-sm">
-                        {[0, 1, 2, 3, 4, 5, 6].map(style => (
-                          <button 
-                            key={style} 
-                            onClick={() => setBrandSettings({ ...brandSettings, headerRulerStyle: style })} 
-                            className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all shrink-0 ${brandSettings.headerRulerStyle === style ? 'bg-orange-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                          >
-                            {style === 0 ? 'None' : `Ruler ${style}`}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {/* Header Design 1 */}
                   <div 
@@ -5521,8 +5141,6 @@ ${componentLogic}
                         if (normalizedType === 'matching') normalizedType = 'matching';
                         if (normalizedType === 'vocabulary') normalizedType = 'vocabulary';
                         if (normalizedType === 'circle') normalizedType = 'circle';
-                        if (normalizedType === 'cloze') normalizedType = 'cloze';
-                        if (normalizedType === 'double_mcq') normalizedType = 'doubleMcq';
 
                         if (editingCustomDesignId) {
                           const updatedDesign = {
@@ -5536,10 +5154,10 @@ ${componentLogic}
                           
                           if (auth.currentUser) {
                             try {
-                              const designRef = doc(db, 'customDesigns', editingCustomDesignId);
+                              const designRef = doc(db, 'custom_designs', editingCustomDesignId);
                               await setDoc(designRef, updatedDesign, { merge: true });
                             } catch (error) {
-                              handleFirestoreError(error, OperationType.WRITE, `customDesigns/${editingCustomDesignId}`);
+                              handleFirestoreError(error, OperationType.WRITE, `custom_designs/${editingCustomDesignId}`);
                             }
                           }
                           setEditingCustomDesignId(null);
@@ -5551,8 +5169,7 @@ ${componentLogic}
                             type: normalizedType,
                             category: design.category,
                             style: design.style,
-                            prompt: `Apply custom design format for ${design.category}`,
-                            uid: auth.currentUser?.uid || 'anonymous'
+                            prompt: `Apply custom design format for ${design.category}`
                           };
                           
                           console.log('Saving new design:', newDesign);
@@ -5561,18 +5178,19 @@ ${componentLogic}
                           // Save to Firestore if logged in
                           if (auth.currentUser) {
                             try {
-                              const designRef = doc(db, 'customDesigns', newDesign.id);
+                              const designRef = doc(db, 'custom_designs', newDesign.id);
                               await setDoc(designRef, {
                                 ...newDesign,
+                                uid: auth.currentUser.uid,
                                 createdAt: Timestamp.now()
                               });
                             } catch (error) {
-                              handleFirestoreError(error, OperationType.WRITE, `customDesigns/${newDesign.id}`);
+                              handleFirestoreError(error, OperationType.WRITE, `custom_designs/${newDesign.id}`);
                             }
                           }
                           
                           // Automatically select the new design
-                          const validPaperStyleKeys = ['mcq', 'matching', 'tf', 'correctIncorrect', 'vocabulary', 'readingPassage', 'circle', 'sentenceCompletion', 'wordBox', 'cloze', 'doubleMcq'];
+                          const validPaperStyleKeys = ['mcq', 'matching', 'tf', 'correctIncorrect', 'vocabulary', 'readingPassage', 'circle', 'sentenceCompletion', 'wordBox'];
                           if (validPaperStyleKeys.includes(newDesign.type)) {
                             setPaperStyles(prev => ({ ...prev, [newDesign.type]: newDesign.id }));
                           }
@@ -5865,20 +5483,6 @@ ${componentLogic}
                     <div className="space-y-8 pt-6 border-t border-slate-100">
                       <h3 className="text-[13px] font-black text-slate-900 uppercase tracking-widest">Header & Footer Customization</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="space-y-4">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Custom Header Text (Overrides Default)</label>
-                          <input value={brandSettings.customHeaderText || ''} onChange={e => setBrandSettings({ ...brandSettings, customHeaderText: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 outline-none focus:border-orange-500 font-bold text-slate-700" placeholder="e.g. FINAL TERM EXAMINATION - SEMESTER 1" />
-                        </div>
-                        <div className="space-y-4">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Header Ruler Style</label>
-                          <div className="flex bg-slate-100 p-1.5 rounded-2xl gap-1 overflow-x-auto no-scrollbar">
-                            {[0, 1, 2, 3, 4, 5, 6].map(style => (
-                              <button key={style} onClick={() => setBrandSettings({ ...brandSettings, headerRulerStyle: style })} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all shrink-0 ${brandSettings.headerRulerStyle === style ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-400'}`}>
-                                {style === 0 ? 'None' : `Ruler ${style}`}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
                         <div className="space-y-4">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Main Title (School Name)</label>
                           <input value={brandSettings.schoolName} onChange={e => setBrandSettings({ ...brandSettings, schoolName: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 outline-none focus:border-orange-500 font-bold text-slate-700" placeholder="e.g. HARVARD ACADEMY" />
@@ -6250,57 +5854,6 @@ ${componentLogic}
                   Confirm Export
                 </button>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-      {showAddExerciseModal && (
-        <div className="fixed inset-0 z-[300] bg-slate-950/80 backdrop-blur-2xl flex items-center justify-center p-4">
-          <div className="bg-white rounded-[48px] w-full max-w-xl overflow-hidden shadow-2xl flex flex-col border border-white/50">
-            <div className="p-8 flex justify-between items-center border-b border-slate-100">
-              <div className="flex items-center gap-4">
-                <div className="h-4 w-4 bg-blue-500 rounded-full animate-pulse"></div>
-                <h2 className="text-[12px] font-black uppercase text-slate-900 tracking-widest">Add Custom Exercise Type</h2>
-              </div>
-              <button onClick={() => setShowAddExerciseModal(false)} className="h-10 w-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900">
-                <i className="fa-solid fa-xmark text-xl"></i>
-              </button>
-            </div>
-            <div className="p-8 space-y-6">
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Exercise Name</label>
-                <input 
-                  type="text"
-                  value={newExerciseName}
-                  onChange={(e) => setNewExerciseName(e.target.value)}
-                  placeholder="e.g., Circle the best answer"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
-                  autoFocus
-                />
-              </div>
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Category</label>
-                <select
-                  value={newExerciseCategory}
-                  onChange={(e) => setNewExerciseCategory(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all appearance-none"
-                >
-                  <option value="All">All Modules</option>
-                  <option value="Grammar">Grammar</option>
-                  <option value="Vocabulary">Vocabulary</option>
-                  <option value="Reading">Reading</option>
-                  <option value="Mixed">Mixed</option>
-                  <option value="Generals">Generals</option>
-                  <option value="Custom">Custom</option>
-                </select>
-              </div>
-              <button 
-                onClick={saveCustomExerciseType}
-                disabled={!newExerciseName.trim()}
-                className="w-full py-4 bg-blue-600 text-white rounded-2xl text-[11px] font-bold uppercase tracking-widest hover:bg-blue-700 transition-all disabled:opacity-50"
-              >
-                Save Exercise Type
-              </button>
             </div>
           </div>
         </div>

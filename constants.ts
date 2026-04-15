@@ -632,24 +632,6 @@ export const DEFAULT_MASTER_PROTOCOLS: StrictRule[] = [
     active: true,
     priority: 'Medium',
     category: 'General'
-  },
-  {
-    id: 'mp-custom-exercise-logic',
-    label: 'CUSTOM EXERCISE ADAPTATION',
-    description: 'Ensures AI can handle user-defined exercise types.',
-    promptInjection: 'CUSTOM EXERCISES: If an exercise type is not standard (e.g., user-added), analyze its label and professional label to determine the best pedagogical format. Apply standard formatting (nested tables for MCQs, long blanks for writing) where appropriate.',
-    active: true,
-    priority: 'High',
-    category: 'General'
-  },
-  {
-    id: 'mp-reading-uniqueness',
-    label: 'READING: ABSOLUTE PASSAGE UNIQUENESS',
-    description: 'Forces unique reading passages for every reading exercise.',
-    promptInjection: 'STRICT UNIQUENESS: Every single reading exercise MUST have its own unique reading passage. NEVER reuse the same text for multiple exercises in the same test. Each passage must be distinct in content and theme.',
-    active: true,
-    priority: 'High',
-    category: 'Reading'
   }
 ];
 
@@ -659,7 +641,7 @@ export const INITIAL_TEMPLATES: InstructionTemplate[] = [
   { id: 'g_correct_incorrect', category: 'GRAMMAR', label: 'Correct/Incorrect', professionalLabel: 'Write C (correct) or I (incorrect).', prompt: 'Part: Write C (correct) or I (incorrect) for {{TOPIC}}. Apply PRAGMATIC BOUNDARY logic. STRICT: DO NOT include the answer (C or I) in the student worksheet. The answer MUST ONLY appear in the Answer Key section at the end. NEVER put the actual answer next to the sentence in the student view.', columnCount: 2 },
   { id: 'g_circle', category: 'GRAMMAR', label: 'Circle', professionalLabel: 'Circle the correct answers.', prompt: 'Part: Circle the correct answers for {{TOPIC}}. STRICT: No MCQ options.', columnCount: 1 },
   { id: 'g_complete_sentences', category: 'GRAMMAR', label: 'Sentence Complete', professionalLabel: 'Complete the following sentences.', prompt: 'Part: Complete the following sentences for {{TOPIC}}. Note: Use {{BLANK}} and provide the base verb in parentheses at the end of the blank.', columnCount: 1 },
-  { id: 'g_pair', category: 'GRAMMAR', label: 'Double MCQ', professionalLabel: 'Double-gap MCQ testing two different aspects of {{TOPIC}} in one sentence.', prompt: 'Part: Double-gap MCQ testing two different aspects of {{TOPIC}} in one sentence. Select the correct pair of words to complete each sentence. Format: Put options on a new line below the question. Use a nested 4-column table for options to ensure they are perfectly aligned (A, B, C, D). Apply PRAGMATIC BOUNDARY logic. Each option must contain two words separated by a slash (e.g., A. word1 / word2).', columnCount: 1 },
+  { id: 'g_pair', category: 'GRAMMAR', label: 'Double MCQ', professionalLabel: 'Double-gap MCQ testing two different aspects of {{TOPIC}} in one sentence.', prompt: 'Part: Double-gap MCQ testing two different aspects of {{TOPIC}} in one sentence. Select the correct pair of words to complete each sentence. Format: Put options on a new line below the question. Use a nested 4-column table for options to ensure they are perfectly aligned (A, B, C, D). Apply PRAGMATIC BOUNDARY logic.', columnCount: 1 },
   { id: 'g_spelling', category: 'GRAMMAR', label: 'Spelling Rules', professionalLabel: 'Spelling Rules.', prompt: 'Part: Spelling Rules. Complete the table following the spelling rules for the given words related to {{TOPIC}}. This is based on the lessons. STRICT: No MCQ options.', columnCount: 0 },
   
   // --- ADDITIONAL GRAMMAR ---
@@ -696,7 +678,7 @@ D. Teacher Mode (Error Correction: 1 paragraph with 5 errors, Students rewrite b
   { id: 'g_editing', category: 'GRAMMAR', label: 'Editing', professionalLabel: 'Identify and correct the grammatical errors in the following paragraph.', prompt: 'Part: Identify and correct the grammatical errors in the following paragraph. This is the mixed grammar test. The answer can be any types of grammar lessons. Correct all the mistakes.', columnCount: 0 },
   { id: 'g_reduce', category: 'GRAMMAR', label: 'Reduce', professionalLabel: 'Rewrite the following sentences by reducing them to fewer words while maintaining the original meaning.', prompt: 'Part: Rewrite the following sentences by reducing them to fewer words.', columnCount: 0 },
   { id: 'g_best_rewrite', category: 'GRAMMAR', label: 'Best Rewrite', professionalLabel: 'Choose the most appropriate rewrite for each of the following sentences.', prompt: 'Part: Choose the most appropriate rewrite for each sentence.', columnCount: 0 },
-  { id: 'g_cloze_passage_short', category: 'GRAMMAR', label: 'Cloze', professionalLabel: 'Complete the cloze passage by filling in the blanks with appropriate grammatical forms.', prompt: 'Part: Complete the cloze passage by filling in the blanks with appropriate words for {{TOPIC}}. Generate a coherent paragraph with 5-10 numbered blanks (e.g., (1) ________). Provide a word bank in a box at the top if appropriate, or let students use their own knowledge.', columnCount: 0 },
+  { id: 'g_cloze_passage_short', category: 'GRAMMAR', label: 'Cloze', professionalLabel: 'Complete the cloze passage by filling in the blanks with appropriate grammatical forms.', prompt: 'Part: Complete the cloze passage by filling in the blanks with appropriate words.', columnCount: 0 },
   
   // READING
   { id: 'r_tf_stmt', category: 'READING', label: 'True/False', professionalLabel: 'Read the following statements and determine if they are True or False based on the text.', prompt: 'Part: Read the following statements and determine if they are True or False based on the text about {{TOPIC}}. DO NOT GENERATE A, B, C, D OPTIONS. DO NOT USE MULTIPLE CHOICE FORMAT. MANDATORY: Use a wide variety of subjects (e.g., "The dog", "Sarah", "The weather", "They"). DO NOT start every sentence with "I" or the same character\'s name.', columnCount: 1 },

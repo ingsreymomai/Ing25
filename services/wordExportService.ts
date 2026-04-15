@@ -561,42 +561,6 @@ export const exportToWord = async (
                 cell.style.border = '3pt solid #000000';
                 cell.style.setProperty('mso-border-alt', '3pt solid #000000');
                 cell.style.fontWeight = '900';
-              } else if (instructionHeaderStyle === 15) {
-                cell.style.backgroundColor = '#581c87';
-                cell.style.setProperty('mso-shading', 'windowtext 0% #581c87');
-                cell.style.color = '#ffffff';
-                cell.style.border = '2pt solid #fbbf24';
-                cell.style.setProperty('mso-border-alt', '2pt solid #fbbf24');
-                cell.style.textAlign = 'center';
-              } else if (instructionHeaderStyle === 16) {
-                cell.style.backgroundColor = '#14532d';
-                cell.style.setProperty('mso-shading', 'windowtext 0% #14532d');
-                cell.style.color = '#ffffff';
-                cell.style.setProperty('mso-border-left-alt', '10pt solid #14532d');
-                cell.style.paddingLeft = '20pt';
-              } else if (instructionHeaderStyle === 17) {
-                cell.style.backgroundColor = '#0ea5e9';
-                cell.style.setProperty('mso-shading', 'windowtext 0% #0ea5e9');
-                cell.style.color = '#ffffff';
-                cell.style.textAlign = 'center';
-              } else if (instructionHeaderStyle === 18) {
-                cell.style.border = '2pt dotted #64748b';
-                cell.style.setProperty('mso-border-alt', '2pt dotted #64748b');
-                cell.style.color = '#475569';
-              } else if (instructionHeaderStyle === 19) {
-                cell.style.backgroundColor = '#ea580c';
-                cell.style.setProperty('mso-shading', 'windowtext 0% #ea580c');
-                cell.style.color = '#ffffff';
-                cell.style.borderBottom = '4pt solid #9a3412';
-                cell.style.setProperty('mso-border-bottom-alt', '4pt solid #9a3412');
-                cell.style.fontWeight = '900';
-              } else if (instructionHeaderStyle === 20) {
-                cell.style.backgroundColor = '#f8fafc';
-                cell.style.setProperty('mso-shading', 'windowtext 0% #f8fafc');
-                cell.style.color = '#1e293b';
-                cell.style.border = '1pt solid #cbd5e1';
-                cell.style.setProperty('mso-border-alt', '1pt solid #cbd5e1');
-                cell.style.textAlign = 'center';
               } else {
                 cell.style.borderBottom = '2.5pt solid #334155';
                 cell.style.setProperty('mso-border-bottom-alt', '2.5pt solid #334155');
