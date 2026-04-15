@@ -46,6 +46,9 @@ interface SidebarProps {
   onWidthChange?: (width: number) => void;
   side?: 'left' | 'right';
   onSideChange?: (side: 'left' | 'right') => void;
+  user: any;
+  onLogin: () => void;
+  onLogout: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -75,7 +78,10 @@ const Sidebar: React.FC<SidebarProps> = ({
   width = 280,
   onWidthChange,
   side = 'left',
-  onSideChange
+  onSideChange,
+  user,
+  onLogin,
+  onLogout
 }) => {
   const [editingHistId, setEditingHistId] = useState<string | null>(null);
   const [tempTitle, setTempTitle] = useState('');
@@ -159,6 +165,41 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <i className="fa-solid fa-chevron-left"></i>
               </button>
             </div>
+          </div>
+
+          {/* User Profile / Login */}
+          <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+            {user ? (
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 overflow-hidden">
+                  {user.photoURL ? (
+                    <img src={user.photoURL} alt={user.displayName} className="h-8 w-8 rounded-full border border-white shadow-sm" referrerPolicy="no-referrer" />
+                  ) : (
+                    <div className="h-8 w-8 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center font-bold text-xs uppercase">
+                      {user.displayName?.charAt(0) || user.email?.charAt(0)}
+                    </div>
+                  )}
+                  <div className="flex flex-col overflow-hidden">
+                    <span className="text-[10px] font-bold text-slate-700 truncate">{user.displayName}</span>
+                    <span className="text-[8px] text-slate-400 truncate">{user.email}</span>
+                  </div>
+                </div>
+                <button 
+                  onClick={onLogout}
+                  className="h-7 w-7 bg-white text-slate-400 rounded-lg flex items-center justify-center hover:text-rose-600 transition-all shadow-sm"
+                  title="Logout"
+                >
+                  <i className="fa-solid fa-right-from-bracket text-[10px]"></i>
+                </button>
+              </div>
+            ) : (
+              <button 
+                onClick={onLogin}
+                className="w-full py-2 bg-orange-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-orange-700 transition-all shadow-md shadow-orange-200"
+              >
+                <i className="fa-solid fa-user"></i> Login with Google
+              </button>
+            )}
           </div>
 
         <div className="flex bg-slate-100 p-1 rounded-xl gap-1">

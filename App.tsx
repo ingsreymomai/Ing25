@@ -277,7 +277,7 @@ function App() {
   useEffect(() => {
     if (!isAuthReady || !auth.currentUser) return;
 
-    const userSettingsRef = doc(db, 'user_settings', auth.currentUser.uid);
+    const userSettingsRef = doc(db, 'users', auth.currentUser.uid);
     
     const unsubscribe = onSnapshot(userSettingsRef, (docSnap) => {
       if (docSnap.exists()) {
@@ -287,7 +287,7 @@ function App() {
         if (data.paperDesign !== undefined) setPaperDesign(data.paperDesign);
       }
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, `user_settings/${auth.currentUser?.uid}`);
+      handleFirestoreError(error, OperationType.GET, `users/${auth.currentUser?.uid}`);
     });
 
     return () => unsubscribe();
@@ -297,13 +297,55 @@ function App() {
   useEffect(() => {
     if (!isAuthReady || !auth.currentUser) return;
 
-    const q = query(collection(db, 'custom_designs'), where('uid', '==', auth.currentUser.uid));
+    const q = query(collection(db, 'customDesigns'), where('uid', '==', auth.currentUser.uid));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const designs = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as any));
       setCustomDesigns(designs);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'custom_designs');
+      handleFirestoreError(error, OperationType.LIST, 'customDesigns');
+    });
+
+    return () => unsubscribe();
+  }, [isAuthReady]);
+
+  // Sync custom exercise types with Firestore
+  useEffect(() => {
+    if (!isAuthReady || !auth.currentUser) return;
+
+    const q = query(collection(db, 'customExerciseTypes'), where('uid', '==', auth.currentUser.uid));
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const types = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as any));
+      if (types.length > 0) {
+        setCustomExerciseTypes(prev => {
+          // Merge with defaults if needed, but usually we just want the cloud ones
+          return types;
+        });
+      }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'customExerciseTypes');
+    });
+
+    return () => unsubscribe();
+  }, [isAuthReady]);
+
+  // Sync history with Firestore
+  useEffect(() => {
+    if (!isAuthReady || !auth.currentUser) return;
+
+    const q = query(
+      collection(db, 'history'), 
+      where('uid', '==', auth.currentUser.uid),
+      orderBy('timestamp', 'desc'),
+      limit(30)
+    );
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const cloudHistory = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as HistoryItem));
+      setHistory(cloudHistory);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'history');
     });
 
     return () => unsubscribe();
@@ -312,7 +354,7 @@ function App() {
   const saveSettingsToFirestore = async () => {
     if (!auth.currentUser) return;
     try {
-      const userSettingsRef = doc(db, 'user_settings', auth.currentUser.uid);
+      const userSettingsRef = doc(db, 'users', auth.currentUser.uid);
       await setDoc(userSettingsRef, {
         uid: auth.currentUser.uid,
         brandSettings,
@@ -321,7 +363,47 @@ function App() {
         updatedAt: Timestamp.now()
       }, { merge: true });
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, `user_settings/${auth.currentUser.uid}`);
+      handleFirestoreError(error, OperationType.WRITE, `users/${auth.currentUser.uid}`);
+    }
+  };
+
+  const handleAddCustomExerciseType = async () => {
+    const name = prompt("Enter new exercise type name (e.g., 'Circle the best answer'):");
+    if (name) {
+      const id = `custom_${Date.now()}`;
+      const newType: CustomExerciseType = { 
+        id, 
+        name, 
+        category: (activeModule.charAt(0).toUpperCase() + activeModule.slice(1).toLowerCase()) as any,
+        uid: auth.currentUser?.uid || 'anonymous'
+      };
+
+      // Update state
+      setCustomExerciseTypes(prev => [...prev, newType]);
+
+      // Save to Firestore if logged in
+      if (auth.currentUser) {
+        try {
+          await setDoc(doc(db, 'customExerciseTypes', id), newType);
+        } catch (error) {
+          handleFirestoreError(error, OperationType.WRITE, `customExerciseTypes/${id}`);
+        }
+      }
+    }
+  };
+
+  const handleDeleteCustomDesign = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this design?")) return;
+    
+    setCustomDesigns(prev => prev.filter(d => d.id !== id));
+    
+    if (auth.currentUser) {
+      try {
+        const { deleteDoc } = await import('firebase/firestore');
+        await deleteDoc(doc(db, 'customDesigns', id));
+      } catch (error) {
+        handleFirestoreError(error, OperationType.DELETE, `customDesigns/${id}`);
+      }
     }
   };
   const [isAssistantVisible, setIsAssistantVisible] = useState(false);
@@ -1489,7 +1571,7 @@ ${customHtml}
         blueprintStr = `(DO NOT USE A PRE-ASSIGNED ANSWER KEY. Generate natural, accurate answers for the Teacher Answer Key based on the text.)`;
       }
 
-      const formatInstruction = '';
+      let formatInstruction = '';
       
       // Use overrideCol if it's > 0, otherwise use defaultColumnCount
       const effectiveCols = overrideCol > 0 ? overrideCol : defaultColumnCount;
@@ -1688,9 +1770,9 @@ ${componentLogic}
         level: activeLevel,
         topic: topic,
         // Add who created it
-        authorName: session?.name || 'Anonymous',
-        authorCode: session?.code || 'N/A',
-        authorEmail: session?.email || 'N/A'
+        authorName: auth.currentUser?.displayName || session?.name || 'Anonymous',
+        authorEmail: auth.currentUser?.email || session?.email || 'N/A',
+        uid: auth.currentUser?.uid || 'anonymous'
       };
 
       // 3. Update Local History (so you see it on screen)
@@ -1700,13 +1782,13 @@ ${componentLogic}
       });
 
       // 4. SEND TO THE CLOUD (The Magic Step!)
-      try {
-           // This line sends the data to a collection named 'generatedTests' in your Firebase database
-           await addDoc(collection(db, 'generatedTests'), newTestItem);
-           console.log("✅☁️ Test successfully saved to the Firebase Cloud Notebook!");
-      } catch (e) {
-           // If something goes wrong, tell the console
-           handleFirestoreError(e, 'create' as any, 'generatedTests');
+      if (auth.currentUser) {
+        try {
+             await setDoc(doc(db, 'history', newTestItem.id), newTestItem);
+             console.log("✅☁️ Test successfully saved to the Firebase Cloud Notebook!");
+        } catch (e) {
+             handleFirestoreError(e, OperationType.WRITE, `history/${newTestItem.id}`);
+        }
       }
     } catch (error: any) {
       console.error("Generation failed:", error);
@@ -2023,6 +2105,9 @@ ${componentLogic}
             onWidthChange={setSidebarWidth}
             side={sidebarSide}
             onSideChange={setSidebarSide}
+            user={auth.currentUser}
+            onLogin={handleGoogleLogin}
+            onLogout={handleLogout}
           />
 
           <main 
@@ -2058,17 +2143,7 @@ ${componentLogic}
                 
                 <div className="flex items-center gap-4">
                   <button 
-                    onClick={() => {
-                      const name = prompt("Enter new exercise type name (e.g., 'Circle the best answer'):");
-                      if (name) {
-                        const id = name.toLowerCase().replace(/\s+/g, '_');
-                        setCustomExerciseTypes(prev => [...prev, { 
-                          id, 
-                          name, 
-                          category: (activeModule.charAt(0).toUpperCase() + activeModule.slice(1).toLowerCase()) as any
-                        }]);
-                      }
-                    }}
+                    onClick={handleAddCustomExerciseType}
                     className="px-6 lg:px-8 py-3 bg-blue-600 text-white rounded-xl text-[11px] font-bold uppercase tracking-widest flex items-center gap-3 hover:bg-blue-700 transition-all shadow-lg shadow-blue-200/50 active:scale-95 whitespace-nowrap"
                   >
                     <i className="fa-solid fa-plus"></i> Add New Exercise Type
@@ -2177,17 +2252,7 @@ ${componentLogic}
                         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Templates (A-M)</h3>
                       </div>
                       <button 
-                        onClick={() => {
-                          const name = prompt("Enter new exercise type name (e.g., 'Circle the best answer'):");
-                          if (name) {
-                            const id = name.toLowerCase().replace(/\s+/g, '_');
-                            setCustomExerciseTypes(prev => [...prev, { 
-                              id, 
-                              name, 
-                              category: (activeModule.charAt(0).toUpperCase() + activeModule.slice(1).toLowerCase()) as any
-                            }]);
-                          }
-                        }}
+                        onClick={handleAddCustomExerciseType}
                         className="h-7 px-3 bg-slate-100 text-slate-600 rounded-lg text-[9px] font-bold uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center gap-2"
                       >
                         <i className="fa-solid fa-plus"></i> ADD NEW TYPE
@@ -2297,7 +2362,7 @@ ${componentLogic}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {instructionTemplates.filter(t => t.category?.toUpperCase() === activeModule.toUpperCase() && selectedInstructionIds.includes(t.id)).map((t, idx) => {
                           const curItems = itemCountOverrides[t.id] || 10;
-                          const curCols = columnOverrides[t.id] !== undefined ? columnOverrides[t.id] : (t.columnCount !== undefined ? t.columnCount : (globalLayout === 2 ? 2 : 1));
+                          const curCols = columnOverrides[t.id] !== undefined ? columnOverrides[t.id] : (t.columnCount !== undefined ? t.columnCount : defaultColumnCount);
                           
                           // Diverse color mapping based on index
                           const colors = ['orange', 'blue', 'emerald', 'rose', 'violet', 'amber', 'indigo', 'cyan'];
@@ -2394,17 +2459,7 @@ ${componentLogic}
                         <div className="h-1 w-4 bg-orange-500 rounded-full"></div>
                       </div>
                       <button 
-                        onClick={() => {
-                          const name = prompt("Enter new exercise type name (e.g., 'Circle the best answer'):");
-                          if (name) {
-                            const id = name.toLowerCase().replace(/\s+/g, '_');
-                            setCustomExerciseTypes(prev => [...prev, { 
-                              id, 
-                              name, 
-                              category: (activeModule.charAt(0).toUpperCase() + activeModule.slice(1).toLowerCase()) as any
-                            }]);
-                          }
-                        }}
+                        onClick={handleAddCustomExerciseType}
                         className="h-7 px-3 bg-slate-100 text-slate-600 rounded-lg text-[9px] font-bold uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center gap-2"
                       >
                         <i className="fa-solid fa-plus"></i> ADD NEW TYPE
@@ -3587,9 +3642,7 @@ ${componentLogic}
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (confirm("Delete this custom style?")) {
-                                    setCustomDesigns(prev => prev.filter(d => d.id !== design.id));
-                                  }
+                                  handleDeleteCustomDesign(design.id);
                                 }}
                                 className="h-6 w-6 text-slate-300 hover:text-rose-500 transition-colors"
                               >
@@ -3731,9 +3784,7 @@ ${componentLogic}
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (confirm("Delete this custom style?")) {
-                                    setCustomDesigns(prev => prev.filter(d => d.id !== design.id));
-                                  }
+                                  handleDeleteCustomDesign(design.id);
                                 }}
                                 className="h-6 w-6 text-slate-300 hover:text-rose-500 transition-colors"
                               >
@@ -3904,9 +3955,7 @@ ${componentLogic}
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (confirm("Delete this custom style?")) {
-                                    setCustomDesigns(prev => prev.filter(d => d.id !== design.id));
-                                  }
+                                  handleDeleteCustomDesign(design.id);
                                 }}
                                 className="h-6 w-6 text-slate-300 hover:text-rose-500 transition-colors"
                               >
@@ -4011,9 +4060,7 @@ ${componentLogic}
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (confirm("Delete this custom style?")) {
-                                    setCustomDesigns(prev => prev.filter(d => d.id !== design.id));
-                                  }
+                                  handleDeleteCustomDesign(design.id);
                                 }}
                                 className="h-6 w-6 text-slate-300 hover:text-rose-500 transition-colors"
                               >
@@ -4096,9 +4143,7 @@ ${componentLogic}
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (confirm("Delete this custom style?")) {
-                                    setCustomDesigns(prev => prev.filter(d => d.id !== design.id));
-                                  }
+                                  handleDeleteCustomDesign(design.id);
                                 }}
                                 className="h-6 w-6 text-slate-300 hover:text-rose-500 transition-colors"
                               >
@@ -4187,9 +4232,7 @@ ${componentLogic}
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (confirm("Delete this custom style?")) {
-                                    setCustomDesigns(prev => prev.filter(d => d.id !== design.id));
-                                  }
+                                  handleDeleteCustomDesign(design.id);
                                 }}
                                 className="h-6 w-6 text-slate-300 hover:text-rose-500 transition-colors"
                               >
@@ -5558,10 +5601,10 @@ ${componentLogic}
                           
                           if (auth.currentUser) {
                             try {
-                              const designRef = doc(db, 'custom_designs', editingCustomDesignId);
+                              const designRef = doc(db, 'customDesigns', editingCustomDesignId);
                               await setDoc(designRef, updatedDesign, { merge: true });
                             } catch (error) {
-                              handleFirestoreError(error, OperationType.WRITE, `custom_designs/${editingCustomDesignId}`);
+                              handleFirestoreError(error, OperationType.WRITE, `customDesigns/${editingCustomDesignId}`);
                             }
                           }
                           setEditingCustomDesignId(null);
@@ -5573,7 +5616,8 @@ ${componentLogic}
                             type: normalizedType,
                             category: design.category,
                             style: design.style,
-                            prompt: `Apply custom design format for ${design.category}`
+                            prompt: `Apply custom design format for ${design.category}`,
+                            uid: auth.currentUser?.uid || 'anonymous'
                           };
                           
                           console.log('Saving new design:', newDesign);
@@ -5582,14 +5626,13 @@ ${componentLogic}
                           // Save to Firestore if logged in
                           if (auth.currentUser) {
                             try {
-                              const designRef = doc(db, 'custom_designs', newDesign.id);
+                              const designRef = doc(db, 'customDesigns', newDesign.id);
                               await setDoc(designRef, {
                                 ...newDesign,
-                                uid: auth.currentUser.uid,
                                 createdAt: Timestamp.now()
                               });
                             } catch (error) {
-                              handleFirestoreError(error, OperationType.WRITE, `custom_designs/${newDesign.id}`);
+                              handleFirestoreError(error, OperationType.WRITE, `customDesigns/${newDesign.id}`);
                             }
                           }
                           
