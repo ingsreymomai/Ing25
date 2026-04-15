@@ -150,7 +150,7 @@ const DEFAULT_BRAND_SETTINGS: BrandSettings = {
   fontWeight: '800',
   letterSpacing: 0,
   textTransform: 'none',
-  schoolName: 'GLOBAL EDUCATION ACADEMY',
+  schoolName: 'Global Education Academy',
   schoolAddress: 'Developing Potential for Success School',
   footerText: 'This test is for educational purposes only. © 2026 DPSS.',
   studentLabel: 'STUDENT NAME',
@@ -1273,9 +1273,7 @@ ${customHtml}
     const generationIntegrityInstruction = `
 [GENERATION INTEGRITY - CRITICAL]:
 1. ALL SELECTED TYPES: You MUST generate content for EVERY SINGLE exercise type selected in the list below. Do NOT skip any.
-2. UNIQUE READING PASSAGES: For Reading exercises, you MUST generate a COMPLETELY UNIQUE and DIFFERENT reading passage for EACH exercise type. 
-   - Example: If "Reading MCQ" and "Reading T/F" are both selected, you MUST generate TWO different stories/texts. 
-   - NEVER use the same text for multiple exercise types unless the user explicitly asks for "One Reading Text for All Parts".
+2. READING PASSAGES: For Reading exercises, you MUST generate a UNIQUE and DIFFERENT reading passage for EACH exercise type (e.g., one passage for T/F, a different passage for MCQ). Do NOT use one passage for multiple exercise types unless explicitly requested.
 3. ITEM COUNTS: Strictly follow the item count overrides if provided.
 4. VARIETY: Ensure high variety in scenarios and sentence structures.
 `;
@@ -2858,7 +2856,7 @@ ${componentLogic}
               <i className="fa-solid fa-arrow-left group-hover:-translate-x-1 transition-transform"></i> WORKSPACE
             </button>
             <div className="flex-1 text-center">
-              <h2 className="text-slate-800 font-bold uppercase tracking-widest text-[12px]">Table/column Styles Workspace</h2>
+              <h2 className="text-slate-800 font-bold uppercase tracking-widest text-[12px]">Instruction Design Workspace</h2>
             </div>
             <div className="flex gap-2">
               <button 
@@ -2872,8 +2870,8 @@ ${componentLogic}
           <div className="flex-1 bg-slate-50 overflow-y-auto p-8 no-scrollbar">
             <div className="max-w-4xl mx-auto space-y-10">
               <div className="bg-white rounded-[32px] p-10 border border-slate-100 shadow-sm">
-                <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight">Table/column Architect</h3>
-                <p className="text-sm text-slate-500 mb-8">Choose a style for the "PART A: ..." instruction headers, tables, and columns.</p>
+                <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight">Instruction Header Architect</h3>
+                <p className="text-sm text-slate-500 mb-8">Choose a style for the "PART A: ..." instruction headers.</p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {[
@@ -3736,23 +3734,11 @@ ${componentLogic}
 
                   {/* Circle Design Samples */}
                   <div className="space-y-6 border-t border-slate-100 pt-8">
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center">
-                          <i className="fa-solid fa-circle-dot"></i>
-                        </div>
-                        <h4 className="text-lg font-bold text-slate-800 uppercase tracking-widest">Circle Designs</h4>
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="h-10 w-10 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center">
+                        <i className="fa-solid fa-circle-dot"></i>
                       </div>
-                      <button 
-                        onClick={() => {
-                          setDesignTargetTypeId('circle');
-                          setSettingsTab('FORMAT_DESIGN');
-                          setShowSettings(true);
-                        }}
-                        className="px-4 py-2 bg-purple-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-purple-700 transition-all flex items-center gap-2"
-                      >
-                        <i className="fa-solid fa-plus"></i> Add NEW
-                      </button>
+                      <h4 className="text-lg font-bold text-slate-800 uppercase tracking-widest">Circle Designs</h4>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
