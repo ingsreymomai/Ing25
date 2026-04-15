@@ -159,12 +159,13 @@ const DEFAULT_BRAND_SETTINGS: BrandSettings = {
   dateLabel: 'DATE',
   classLabel: 'CLASS',
   teacherLabel: 'TEACHER',
-  headerStyle: 10,
+  headerStyle: 13,
   logos: Array(30).fill(undefined),
   logoWidth: 300,
   logoData: undefined,
   activeFont: 'Garamond',
-  randomizeFont: false
+  randomizeFont: false,
+  headerRulerStyle: 4
 };
 
 const DEFAULT_SESSION: UserSession = {
@@ -430,9 +431,9 @@ function App() {
   const [activeSubject, setActiveSubject] = useState<string>('cambodia');
   const [isRandomSubject, setIsRandomSubject] = useState(true);
   const [showSubjectModal, setShowSubjectModal] = useState(false);
-  const [globalLayout, setGlobalLayout] = useState<number>(13); // Option 14: Bubbles
-  const [baseLayout, setBaseLayout] = useState<number>(0); // 0: Clean, 1: Lined, 2: Grid, 3: Vertical Middle
-  const [instructionRulerStyle, setInstructionRulerStyle] = useState<number>(4); // Divider 4: Ruler S1
+  const [globalLayout, setGlobalLayout] = useState<number>(3); // Divider 4: Soft Lavender
+  const [baseLayout, setBaseLayout] = useState<number>(3); // Divider 4
+  const [instructionRulerStyle, setInstructionRulerStyle] = useState<number>(4); // Ruler S1
   const [isBottomPanelHidden, setIsBottomPanelHidden] = useState(false);
   const [isCountriesHidden, setIsCountriesHidden] = useState(false);
   const [customArchitectSubTab, setCustomArchitectSubTab] = useState<string>('All');
@@ -2104,12 +2105,7 @@ ${componentLogic}
                 )}
                 
                 <div className="flex items-center gap-4">
-                  <button 
-                    onClick={handleAddCustomExerciseType}
-                    className="px-6 lg:px-8 py-3 bg-blue-600 text-white rounded-xl text-[11px] font-bold uppercase tracking-widest flex items-center gap-3 hover:bg-blue-700 transition-all shadow-lg shadow-blue-200/50 active:scale-95 whitespace-nowrap"
-                  >
-                    <i className="fa-solid fa-plus"></i> Add New Exercise Type
-                  </button>
+                  {/* Removed + Add New Exercise Type button per user request */}
 
                   <button 
                     onClick={handleGenerate}
@@ -2130,7 +2126,7 @@ ${componentLogic}
                       className={`px-4 lg:px-6 py-2 rounded-lg text-[11px] font-bold flex items-center gap-2 transition-all whitespace-nowrap ${baseLayout > 0 ? 'bg-blue-600 text-white shadow-md' : 'text-slate-700 hover:bg-white/40'}`}
                     >
                       <i className={`fa-solid ${baseLayout === 4 ? 'fa-columns' : baseLayout === 3 ? 'fa-arrows-left-right' : baseLayout === 2 ? 'fa-table-columns' : baseLayout === 1 ? 'fa-grip-lines' : 'fa-list'} text-[10px]`}></i> 
-                      {baseLayout === 0 ? 'Option 1' : baseLayout === 1 ? 'Option 2' : baseLayout === 2 ? 'Option 3' : baseLayout === 3 ? 'Option 4' : baseLayout === 4 ? 'Option 5' : `Option ${baseLayout + 1}`}
+                      {baseLayout === 0 ? 'Divider 1' : baseLayout === 1 ? 'Divider 2' : baseLayout === 2 ? 'Divider 3' : baseLayout === 3 ? 'Divider 4' : baseLayout === 4 ? 'Divider 5' : `Divider ${baseLayout + 1}`}
                     </button>
                     <button 
                       onClick={(e) => {
@@ -2145,7 +2141,7 @@ ${componentLogic}
                        instructionRulerStyle === 1 ? 'Divider: S1' :
                        instructionRulerStyle === 2 ? 'Divider: S2' :
                        instructionRulerStyle === 3 ? 'Divider: S3' :
-                       instructionRulerStyle === 4 ? 'Divider 4: Ruler S1' :
+                       instructionRulerStyle === 4 ? 'Ruler S1' :
                        instructionRulerStyle === 5 ? 'Divider: S5' :
                        instructionRulerStyle === 6 ? 'Divider: S6' :
                        instructionRulerStyle === 7 ? 'Divider: S7' :
@@ -2723,26 +2719,26 @@ ${componentLogic}
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
                   {[
-                    { id: 0, name: 'Option 1: Clean White', desc: 'Pure white paper with subtle border.', icon: 'fa-file-lines' },
-                    { id: 1, name: 'Option 2: Orange Mix', desc: 'White paper with orange accents.', icon: 'fa-palette' },
-                    { id: 2, name: 'Option 3: Modern Emerald', desc: 'Professional green theme.', icon: 'fa-gem' },
-                    { id: 3, name: 'Option 4: Soft Lavender', desc: 'Elegant purple theme.', icon: 'fa-feather' },
-                    { id: 4, name: 'Option 5: Mint', desc: 'Very light green paper.', icon: 'fa-leaf' },
-                    { id: 5, name: 'Option 6: Peach', desc: 'Very light orange paper.', icon: 'fa-sun' },
-                    { id: 6, name: 'Option 7: Sky', desc: 'Very light blue paper.', icon: 'fa-cloud' },
-                    { id: 7, name: 'Option 8: Lavender', desc: 'Very light purple paper.', icon: 'fa-moon' },
-                    { id: 8, name: 'Option 9: Citrus', desc: 'Light Green & Orange mix.', icon: 'fa-lemon' },
-                    { id: 9, name: 'Option 10: Rose', desc: 'Very light pink paper.', icon: 'fa-heart' },
-                    { id: 10, name: 'Option 11: Stars', desc: 'Decorative stars background.', icon: 'fa-star' },
-                    { id: 11, name: 'Option 12: Flowers', desc: 'Decorative flowers background.', icon: 'fa-flower' },
-                    { id: 12, name: 'Option 13: Hearts', desc: 'Decorative hearts background.', icon: 'fa-heart' },
-                    { id: 13, name: 'Option 14: Bubbles', desc: 'Decorative bubbles background.', icon: 'fa-soap' },
-                    { id: 14, name: 'Option 15: Leaves', desc: 'Decorative leaves background.', icon: 'fa-leaf' },
-                    { id: 15, name: 'Option 16: Rainbow', desc: 'Subtle rainbow gradient.', icon: 'fa-rainbow' },
-                    { id: 16, name: 'Option 17: Galaxy', desc: 'Dark galaxy themed paper.', icon: 'fa-user-astronaut' },
-                    { id: 17, name: 'Option 18: Notebook', desc: 'Classic spiral notebook style.', icon: 'fa-book-open' },
-                    { id: 18, name: 'Option 19: Vintage', desc: 'Aged parchment style.', icon: 'fa-scroll' },
-                    { id: 19, name: 'Option 20: Modern', desc: 'Geometric modern art style.', icon: 'fa-shapes' },
+                    { id: 0, name: 'Divider 1: Clean White', desc: 'Pure white paper with subtle border.', icon: 'fa-file-lines' },
+                    { id: 1, name: 'Divider 2: Orange Mix', desc: 'White paper with orange accents.', icon: 'fa-palette' },
+                    { id: 2, name: 'Divider 3: Modern Emerald', desc: 'Professional green theme.', icon: 'fa-gem' },
+                    { id: 3, name: 'Divider 4: Soft Lavender', desc: 'Elegant purple theme.', icon: 'fa-feather' },
+                    { id: 4, name: 'Divider 5: Mint', desc: 'Very light green paper.', icon: 'fa-leaf' },
+                    { id: 5, name: 'Divider 6: Peach', desc: 'Very light orange paper.', icon: 'fa-sun' },
+                    { id: 6, name: 'Divider 7: Sky', desc: 'Very light blue paper.', icon: 'fa-cloud' },
+                    { id: 7, name: 'Divider 8: Lavender', desc: 'Very light purple paper.', icon: 'fa-moon' },
+                    { id: 8, name: 'Divider 9: Citrus', desc: 'Light Green & Orange mix.', icon: 'fa-lemon' },
+                    { id: 9, name: 'Divider 10: Rose', desc: 'Very light pink paper.', icon: 'fa-heart' },
+                    { id: 10, name: 'Divider 11: Stars', desc: 'Decorative stars background.', icon: 'fa-star' },
+                    { id: 11, name: 'Divider 12: Flowers', desc: 'Decorative flowers background.', icon: 'fa-flower' },
+                    { id: 12, name: 'Divider 13: Hearts', desc: 'Decorative hearts background.', icon: 'fa-heart' },
+                    { id: 13, name: 'Divider 14: Bubbles', desc: 'Decorative bubbles background.', icon: 'fa-soap' },
+                    { id: 14, name: 'Divider 15: Leaves', desc: 'Decorative leaves background.', icon: 'fa-leaf' },
+                    { id: 15, name: 'Divider 16: Rainbow', desc: 'Subtle rainbow gradient.', icon: 'fa-rainbow' },
+                    { id: 16, name: 'Divider 17: Galaxy', desc: 'Dark galaxy themed paper.', icon: 'fa-user-astronaut' },
+                    { id: 17, name: 'Divider 18: Notebook', desc: 'Classic spiral notebook style.', icon: 'fa-book-open' },
+                    { id: 18, name: 'Divider 19: Vintage', desc: 'Aged parchment style.', icon: 'fa-scroll' },
+                    { id: 19, name: 'Divider 20: Modern', desc: 'Geometric modern art style.', icon: 'fa-shapes' },
                   ].map((style) => (
                     <div 
                       key={style.id}
@@ -3437,290 +3433,9 @@ ${componentLogic}
                   {/* Custom Exercise Types Library removed as per user request */}
 
 
-                  {/* True or False Design Samples */}
-                  <div className="space-y-6 border-t border-slate-100 pt-8">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="h-10 w-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center">
-                        <i className="fa-solid fa-toggle-on"></i>
-                      </div>
-                      <h4 className="text-lg font-bold text-slate-800 uppercase tracking-widest">True or False Designs</h4>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* T/F Design 1 */}
-                      <div 
-                        onClick={() => setPaperStyles(prev => ({ ...prev, tf: 0 }))}
-                        className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${paperStyles.tf === 0 ? 'border-blue-500 bg-blue-50/30 shadow-md' : 'border-slate-200 hover:border-blue-300 bg-white'}`}
-                      >
-                        <div className="flex justify-between items-center mb-4">
-                          <h5 className="font-bold text-slate-700">Design 1: ( T / F ) at End</h5>
-                          {paperStyles.tf === 0 && <div className="h-6 w-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs"><i className="fa-solid fa-check"></i></div>}
-                        </div>
-                        <div className="bg-white p-4 border border-slate-200 rounded-xl font-serif text-sm space-y-3">
-                          <div className="flex justify-between"><span>1. The earth is flat.</span><span className="font-bold text-blue-600">( T / F )</span></div>
-                          <div className="flex justify-between"><span>2. Water boils at 100 degrees Celsius.</span><span className="font-bold text-blue-600">( T / F )</span></div>
-                          <div className="flex justify-between"><span>3. The sun rises in the west.</span><span className="font-bold text-blue-600">( T / F )</span></div>
-                        </div>
-                      </div>
-
-                      {/* T/F Design 2 */}
-                      <div 
-                        onClick={() => setPaperStyles(prev => ({ ...prev, tf: 1 }))}
-                        className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${paperStyles.tf === 1 ? 'border-blue-500 bg-blue-50/30 shadow-md' : 'border-slate-200 hover:border-blue-300 bg-white'}`}
-                      >
-                        <div className="flex justify-between items-center mb-4">
-                          <h5 className="font-bold text-slate-700">Design 2: Underscore Prefix</h5>
-                          {paperStyles.tf === 1 && <div className="h-6 w-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs"><i className="fa-solid fa-check"></i></div>}
-                        </div>
-                        <div className="bg-white p-4 border border-slate-200 rounded-xl font-serif text-sm space-y-3">
-                          <div><span className="font-bold text-blue-600">____</span> 1. The earth is flat.</div>
-                          <div><span className="font-bold text-blue-600">____</span> 2. Water boils at 100 degrees Celsius.</div>
-                          <div><span className="font-bold text-blue-600">____</span> 3. The sun rises in the west.</div>
-                        </div>
-                      </div>
-
-                      {/* T/F Design 3 */}
-                      <div 
-                        onClick={() => setPaperStyles(prev => ({ ...prev, tf: 2 }))}
-                        className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${paperStyles.tf === 2 ? 'border-blue-500 bg-blue-50/30 shadow-md' : 'border-slate-200 hover:border-blue-300 bg-white'}`}
-                      >
-                        <div className="flex justify-between items-center mb-4">
-                          <h5 className="font-bold text-slate-700">Design 3: Checkbox Prefix</h5>
-                          {paperStyles.tf === 2 && <div className="h-6 w-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs"><i className="fa-solid fa-check"></i></div>}
-                        </div>
-                        <div className="bg-white p-4 border border-slate-200 rounded-xl font-serif text-sm space-y-3">
-                          <div><span className="font-bold text-blue-600">[ ]</span> 1. The earth is flat.</div>
-                          <div><span className="font-bold text-blue-600">[ ]</span> 2. Water boils at 100 degrees Celsius.</div>
-                          <div><span className="font-bold text-blue-600">[ ]</span> 3. The sun rises in the west.</div>
-                        </div>
-                      </div>
-
-                      {/* T/F Design 4 */}
-                      <div 
-                        onClick={() => setPaperStyles(prev => ({ ...prev, tf: 3 }))}
-                        className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${paperStyles.tf === 3 ? 'border-blue-500 bg-blue-50/30 shadow-md' : 'border-slate-200 hover:border-blue-300 bg-white'}`}
-                      >
-                        <div className="flex justify-between items-center mb-4">
-                          <h5 className="font-bold text-slate-700">Design 4: True / False Labels</h5>
-                          {paperStyles.tf === 3 && <div className="h-6 w-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs"><i className="fa-solid fa-check"></i></div>}
-                        </div>
-                        <div className="bg-white p-4 border border-slate-200 rounded-xl font-serif text-sm space-y-4">
-                          <div>
-                            <div>1. The earth is flat.</div>
-                            <div className="ml-4 mt-1 font-bold text-blue-600 text-xs">True / False</div>
-                          </div>
-                          <div>
-                            <div>2. Water boils at 100 degrees Celsius.</div>
-                            <div className="ml-4 mt-1 font-bold text-blue-600 text-xs">True / False</div>
-                          </div>
-                          <div>
-                            <div>3. The sun rises in the west.</div>
-                            <div className="ml-4 mt-1 font-bold text-blue-600 text-xs">True / False</div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Custom T/F Designs */}
-                      {customDesigns.filter(d => d.type === 'true_false' || d.type === 'tf').map(design => (
-                        <div 
-                          key={design.id}
-                          onClick={() => {
-                            setPaperStyles(prev => ({ ...prev, tf: design.id }));
-                          }}
-                          className={`p-6 rounded-2xl border-2 cursor-pointer transition-all group relative ${paperStyles.tf === design.id ? 'border-blue-500 bg-blue-50/30 shadow-md' : 'border-slate-200 hover:border-blue-300 bg-white'}`}
-                        >
-                          <div className="flex justify-between items-center mb-4">
-                            <h5 className="font-bold text-slate-700 uppercase tracking-widest text-xs">Custom: {design.name}</h5>
-                            <div className="flex gap-1">
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const newName = prompt("Enter new name for this style:", design.name);
-                                  if (newName) {
-                                    setCustomDesigns(prev => prev.map(d => d.id === design.id ? { ...d, name: newName } : d));
-                                  }
-                                }}
-                                className="h-6 w-6 text-slate-300 hover:text-blue-500 transition-colors"
-                              >
-                                <i className="fa-solid fa-pen text-[10px]"></i>
-                              </button>
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteCustomDesign(design.id);
-                                }}
-                                className="h-6 w-6 text-slate-300 hover:text-rose-500 transition-colors"
-                              >
-                                <i className="fa-solid fa-trash text-[10px]"></i>
-                              </button>
-                            </div>
-                          </div>
-                          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-[10px] text-slate-400 italic">
-                            Custom formatting and AI instructions applied.
-                          </div>
-                          {paperStyles.tf === design.id && <div className="absolute top-2 right-2 h-6 w-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs shadow-sm"><i className="fa-solid fa-check"></i></div>}
-                        </div>
-                      ))}
-
-                      {/* Add New T/F Style Card */}
-                      <div 
-                        onClick={() => {
-                          setDesignTargetTypeId('true_false');
-                          setSettingsTab('FORMAT_DESIGN');
-                          setShowSettings(true);
-                        }}
-                        className="p-6 rounded-2xl border-2 border-dashed border-slate-200 hover:border-blue-400 hover:bg-blue-50/30 cursor-pointer transition-all flex flex-col items-center justify-center gap-3 group"
-                      >
-                        <div className="h-12 w-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center group-hover:bg-blue-100 group-hover:text-blue-600 transition-all">
-                          <i className="fa-solid fa-plus text-xl"></i>
-                        </div>
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-blue-600">Add New Style</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Correct or Incorrect Design Samples */}
-                  <div className="space-y-6 border-t border-slate-100 pt-8">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="h-10 w-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center">
-                        <i className="fa-solid fa-circle-check"></i>
-                      </div>
-                      <h4 className="text-lg font-bold text-slate-800 uppercase tracking-widest">Correct or Incorrect Designs</h4>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* C/I Design 1 */}
-                      <div 
-                        onClick={() => setPaperStyles(prev => ({ ...prev, correctIncorrect: 0 }))}
-                        className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${paperStyles.correctIncorrect === 0 ? 'border-emerald-500 bg-emerald-50/30 shadow-md' : 'border-slate-200 hover:border-emerald-300 bg-white'}`}
-                      >
-                        <div className="flex justify-between items-center mb-4">
-                          <h5 className="font-bold text-slate-700">Design 1: Checkbox Prefix</h5>
-                          {paperStyles.correctIncorrect === 0 && <div className="h-6 w-6 bg-emerald-500 text-white rounded-full flex items-center justify-center text-xs"><i className="fa-solid fa-check"></i></div>}
-                        </div>
-                        <div className="bg-white p-4 border border-slate-200 rounded-xl font-serif text-sm space-y-3">
-                          <div><span className="font-bold text-emerald-600">[ ]</span> 1. She don't like apples.</div>
-                          <div><span className="font-bold text-emerald-600">[ ]</span> 2. He goes to school every day.</div>
-                          <div><span className="font-bold text-emerald-600">[ ]</span> 3. They is playing football.</div>
-                        </div>
-                      </div>
-
-                      {/* C/I Design 2 */}
-                      <div 
-                        onClick={() => setPaperStyles(prev => ({ ...prev, correctIncorrect: 1 }))}
-                        className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${paperStyles.correctIncorrect === 1 ? 'border-emerald-500 bg-emerald-50/30 shadow-md' : 'border-slate-200 hover:border-emerald-300 bg-white'}`}
-                      >
-                        <div className="flex justify-between items-center mb-4">
-                          <h5 className="font-bold text-slate-700">Design 2: ( C / I ) at End</h5>
-                          {paperStyles.correctIncorrect === 1 && <div className="h-6 w-6 bg-emerald-500 text-white rounded-full flex items-center justify-center text-xs"><i className="fa-solid fa-check"></i></div>}
-                        </div>
-                        <div className="bg-white p-4 border border-slate-200 rounded-xl font-serif text-sm space-y-3">
-                          <div className="flex justify-between"><span>1. She don't like apples.</span><span className="font-bold text-emerald-600">( C / I )</span></div>
-                          <div className="flex justify-between"><span>2. He goes to school every day.</span><span className="font-bold text-emerald-600">( C / I )</span></div>
-                          <div className="flex justify-between"><span>3. They is playing football.</span><span className="font-bold text-emerald-600">( C / I )</span></div>
-                        </div>
-                      </div>
-
-                      {/* C/I Design 3 */}
-                      <div 
-                        onClick={() => setPaperStyles(prev => ({ ...prev, correctIncorrect: 2 }))}
-                        className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${paperStyles.correctIncorrect === 2 ? 'border-emerald-500 bg-emerald-50/30 shadow-md' : 'border-slate-200 hover:border-emerald-300 bg-white'}`}
-                      >
-                        <div className="flex justify-between items-center mb-4">
-                          <h5 className="font-bold text-slate-700">Design 3: Correct / Incorrect Labels</h5>
-                          {paperStyles.correctIncorrect === 2 && <div className="h-6 w-6 bg-emerald-500 text-white rounded-full flex items-center justify-center text-xs"><i className="fa-solid fa-check"></i></div>}
-                        </div>
-                        <div className="bg-white p-4 border border-slate-200 rounded-xl font-serif text-sm space-y-4">
-                          <div>
-                            <div>1. She don't like apples.</div>
-                            <div className="ml-4 mt-1 font-bold text-emerald-600 text-xs">Correct / Incorrect</div>
-                          </div>
-                          <div>
-                            <div>2. He goes to school every day.</div>
-                            <div className="ml-4 mt-1 font-bold text-emerald-600 text-xs">Correct / Incorrect</div>
-                          </div>
-                          <div>
-                            <div>3. They is playing football.</div>
-                            <div className="ml-4 mt-1 font-bold text-emerald-600 text-xs">Correct / Incorrect</div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* C/I Design 4 - (C/I) at Beginning (Default) */}
-                      <div 
-                        onClick={() => setPaperStyles(prev => ({ ...prev, correctIncorrect: 3 }))}
-                        className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${paperStyles.correctIncorrect === 3 ? 'border-emerald-500 bg-emerald-50/30 shadow-md' : 'border-slate-200 hover:border-emerald-300 bg-white'}`}
-                      >
-                        <div className="flex justify-between items-center mb-4">
-                          <h5 className="font-bold text-slate-700">Design 4: ( C / I ) at Beginning</h5>
-                          {paperStyles.correctIncorrect === 3 && <div className="h-6 w-6 bg-emerald-500 text-white rounded-full flex items-center justify-center text-xs"><i className="fa-solid fa-check"></i></div>}
-                        </div>
-                        <div className="bg-white p-4 border border-slate-200 rounded-xl font-serif text-sm space-y-3">
-                          <div className="flex gap-4"><span className="font-bold text-emerald-600 w-12">( C / I )</span><span>1. She don't like apples.</span></div>
-                          <div className="flex gap-4"><span className="font-bold text-emerald-600 w-12">( C / I )</span><span>2. He goes to school every day.</span></div>
-                          <div className="flex gap-4"><span className="font-bold text-emerald-600 w-12">( C / I )</span><span>3. They is playing football.</span></div>
-                        </div>
-                      </div>
-
-                      {/* Custom C/I Designs */}
-                      {customDesigns.filter(d => d.type === 'correct_incorrect' || d.type === 'correctIncorrect').map(design => (
-                        <div 
-                          key={design.id}
-                          onClick={() => {
-                            setPaperStyles(prev => ({ ...prev, correctIncorrect: design.id }));
-                          }}
-                          className={`p-6 rounded-2xl border-2 transition-all cursor-pointer group relative ${paperStyles.correctIncorrect === design.id ? 'border-emerald-500 bg-emerald-50/30 shadow-md' : 'border-slate-200 hover:border-emerald-300 bg-white'}`}
-                        >
-                          <div className="flex justify-between items-center mb-4">
-                            <h5 className="font-bold text-slate-700 uppercase tracking-widest text-xs">Custom: {design.name}</h5>
-                            <div className="flex gap-1">
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const newName = prompt("Enter new name for this style:", design.name);
-                                  if (newName) {
-                                    setCustomDesigns(prev => prev.map(d => d.id === design.id ? { ...d, name: newName } : d));
-                                  }
-                                }}
-                                className="h-6 w-6 text-slate-300 hover:text-blue-500 transition-colors"
-                              >
-                                <i className="fa-solid fa-pen text-[10px]"></i>
-                              </button>
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteCustomDesign(design.id);
-                                }}
-                                className="h-6 w-6 text-slate-300 hover:text-rose-500 transition-colors"
-                              >
-                                <i className="fa-solid fa-trash text-[10px]"></i>
-                              </button>
-                            </div>
-                          </div>
-                          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-[10px] text-slate-400 italic">
-                            Custom formatting and AI instructions applied.
-                          </div>
-                          {paperStyles.correctIncorrect === design.id && <div className="absolute top-2 right-2 h-6 w-6 bg-emerald-500 text-white rounded-full flex items-center justify-center text-xs shadow-sm"><i className="fa-solid fa-check"></i></div>}
-                        </div>
-                      ))}
-
-                      {/* Add New C/I Style Card */}
-                      <div 
-                        onClick={() => {
-                          setDesignTargetTypeId('correct_incorrect');
-                          setSettingsTab('FORMAT_DESIGN');
-                          setShowSettings(true);
-                        }}
-                        className="p-6 rounded-2xl border-2 border-dashed border-slate-200 hover:border-emerald-400 hover:bg-emerald-50/30 cursor-pointer transition-all flex flex-col items-center justify-center gap-3 group"
-                      >
-                        <div className="h-12 w-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-all">
-                          <i className="fa-solid fa-plus text-xl"></i>
-                        </div>
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-emerald-600">Add New Style</span>
-                      </div>
-                    </div>
-                  </div>
-
+                  {/* True or False Design Samples removed as per user request */}
+                  {/* Correct or Incorrect Design Samples removed as per user request */}
+                  
                   {/* Circle Design Samples */}
                   <div className="space-y-6 border-t border-slate-100 pt-8">
                     <div className="flex items-center justify-between mb-6">
@@ -5827,6 +5542,34 @@ ${componentLogic}
                           <button key={theme.id} onClick={() => setActiveThemeId(theme.id)} className={`p-4 rounded-2xl border-2 transition-all text-left space-y-2 ${activeThemeId === theme.id ? 'border-orange-600 bg-white shadow-lg' : 'border-slate-100 bg-slate-50 hover:border-slate-200'}`}>
                             <div className="w-full h-2 rounded-full" style={{ backgroundColor: theme.color }}></div>
                             <div className="text-[10px] font-black uppercase text-slate-900 truncate">{theme.name}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-8 pt-6 border-t border-slate-100">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-[13px] font-black text-slate-900 uppercase tracking-widest">Table & Column Styles</h3>
+                        <button 
+                          onClick={() => {
+                            setDesignTargetTypeId('table');
+                            setSettingsTab('FORMAT_DESIGN');
+                            setShowSettings(true);
+                          }}
+                          className="px-4 py-2 bg-orange-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-orange-700 transition-all shadow-lg shadow-orange-200"
+                        >
+                          <i className="fa-solid fa-plus"></i> Add NEW
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(style => (
+                          <button 
+                            key={style} 
+                            onClick={() => setDefaultColumnCount(style === 1 ? 1 : 2)}
+                            className={`p-4 rounded-2xl border-2 transition-all text-left space-y-2 ${defaultColumnCount === (style === 1 ? 1 : 2) ? 'border-orange-600 bg-white shadow-lg' : 'border-slate-100 bg-slate-50 hover:border-slate-200'}`}
+                          >
+                            <div className="text-[10px] font-black uppercase text-slate-900">Style {style}</div>
+                            <div className="text-[9px] font-bold text-slate-400 uppercase">{style === 1 ? '1 Column' : '2 Columns'}</div>
                           </button>
                         ))}
                       </div>

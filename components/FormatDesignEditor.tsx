@@ -65,6 +65,8 @@ const FormatDesignEditor: React.FC<FormatDesignEditorProps> = ({ onSave, current
       return 'True / False Exercise\n\nRead the statements and mark them as True or False.\n1. The earth is round. ( T / F )\n2. Water boils at 50 degrees. ( T / F )';
     } else if (designTargetTypeId === 'correct_incorrect' || designTargetTypeId === 'correctIncorrect') {
       return 'Correct / Incorrect Exercise\n\nIdentify if the sentences are correct or incorrect.\n1. She don\'t like apples. ( C / I )\n2. He goes to school. ( C / I )';
+    } else if (designTargetTypeId === 'table') {
+      return 'Custom Table Design\n\nUse the ribbon above to add rows and columns. You can also style individual cells by clicking on them.';
     }
     return 'Custom Design Template\n\nThis is a sample text to preview your design. You can edit this text directly to see how your styles apply to different content types.';
   };
@@ -171,16 +173,15 @@ const FormatDesignEditor: React.FC<FormatDesignEditorProps> = ({ onSave, current
             ))}
           </div>
           
-          <div className="bg-white p-1 flex items-center gap-3 overflow-x-auto no-scrollbar border-t border-slate-200">
-            {/* ... (Ribbon content remains the same) ... */}
+          <div className="bg-white p-1 flex items-center gap-2 overflow-x-auto no-scrollbar border-t border-slate-200">
             {activeRibbonTab === 'HOME' && (
-              <div className="flex items-center gap-4 border-r border-slate-200 pr-4">
+              <div className="flex items-center gap-3 border-r border-slate-200 pr-3">
                 <div className="flex flex-col items-center gap-0.5">
                   <div className="flex bg-slate-50 border border-slate-200 rounded-lg p-0.5 gap-0.5">
                     <select 
                       value={fontFamily} 
                       onChange={(e) => setFontFamily(e.target.value)}
-                      className="text-[10px] bg-white border border-slate-200 rounded px-2 py-1 outline-none"
+                      className="text-[9px] bg-white border border-slate-200 rounded px-1.5 py-0.5 outline-none"
                     >
                       <option>Times New Roman</option>
                       <option>Arial</option>
@@ -415,6 +416,44 @@ const FormatDesignEditor: React.FC<FormatDesignEditorProps> = ({ onSave, current
               }}
               dangerouslySetInnerHTML={{ __html: editableContent.mainContent }}
             />
+
+            {showTable && (
+              <div className="w-full overflow-x-auto my-6 break-inside-avoid">
+                <table 
+                  className="w-full border-collapse" 
+                  style={{ 
+                    border: `${tableBorderWidth}pt ${tableBorderStyle} ${tableBorderColor}`,
+                    padding: `${tablePadding}px`
+                  }}
+                >
+                  <tbody>
+                    {tableData.map((row, rIdx) => (
+                      <tr key={rIdx}>
+                        {row.map((cell, cIdx) => (
+                          <td 
+                            key={cIdx}
+                            onClick={() => setSelectedCell([rIdx, cIdx])}
+                            className={`p-3 border transition-all cursor-text ${selectedCell?.[0] === rIdx && selectedCell?.[1] === cIdx ? 'bg-blue-50 ring-2 ring-blue-500 ring-inset' : ''}`}
+                            style={{ 
+                              borderColor: tableBorderColor,
+                              borderStyle: tableBorderStyle,
+                              borderWidth: `${tableBorderWidth}pt`,
+                              textAlign: cellAlignments[rIdx]?.[cIdx] as any || 'left'
+                            }}
+                          >
+                            <input 
+                              value={cell} 
+                              onChange={(e) => updateTableCell(rIdx, cIdx, e.target.value)}
+                              className="w-full bg-transparent border-none focus:ring-0 p-0 text-inherit font-inherit outline-none"
+                            />
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
             {showImages && (
               <div className="space-y-4 break-inside-avoid">

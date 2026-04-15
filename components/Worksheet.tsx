@@ -143,7 +143,7 @@ const Worksheet: React.FC<WorksheetProps> = ({
 
   return (
     <div className="flex-1 overflow-auto p-2 md:p-12 no-scrollbar bg-slate-200/50">
-      <div id="worksheet-container" className="w-full max-w-[210mm] mx-auto pb-64 shadow-2xl worksheet-paper transition-transform duration-300 ease-in-out" style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top center' }}>
+      <div id="worksheet-container" className="w-full max-w-[210mm] mx-auto pb-64 shadow-2xl worksheet-paper transition-transform duration-300 ease-in-out bg-white" style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top center' }}>
         <style>{`
           * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
           .prose { 
@@ -183,7 +183,7 @@ const Worksheet: React.FC<WorksheetProps> = ({
           
           /* Instruction Header Styles */
           ${instructionHeaderStyle === 0 ? `
-            .prose .header-row:not([style*="background"]), .prose tr:first-child td[colspan]:not([style*="background"]) { background-color: #334155 !important; color: white !important; }
+            .prose .header-row:not([style*="background"]), .prose tr:first-child td[colspan]:not([style*="background"]) { background-color: ${isInstructionBackgroundEnabled ? '#334155' : 'transparent'} !important; color: ${isInstructionBackgroundEnabled ? 'white' : 'black'} !important; }
           ` : ''}
           ${instructionHeaderStyle === 1 ? `
             .prose .header-row, .prose tr:first-child td[colspan] { color: #1e3a8a !important; text-align: left !important; padding-left: 15pt !important; }
@@ -222,7 +222,13 @@ const Worksheet: React.FC<WorksheetProps> = ({
             .prose .header-row, .prose tr:first-child td[colspan] { border: 2pt solid #10b981 !important; color: #065f46 !important; text-align: center !important; font-weight: 900 !important; }
           ` : ''}
           ${instructionHeaderStyle === 13 ? `
-            .prose .header-row, .prose tr:first-child td[colspan] { border: 3pt solid black !important; color: black !important; text-transform: uppercase !important; font-weight: 900 !important; }
+            .prose .header-row, .prose tr:first-child td[colspan] { 
+              background-color: #dcfce7 !important; 
+              color: #064e3b !important; 
+              border: 3pt solid #059669 !important; 
+              text-transform: uppercase !important; 
+              font-weight: 900 !important; 
+            }
           ` : ''}
           ${instructionHeaderStyle === 15 ? `
             .prose .header-row, .prose tr:first-child td[colspan] { background-color: #581c87 !important; color: white !important; border: 2pt solid #fbbf24 !important; text-align: center !important; }
