@@ -198,6 +198,14 @@ const Sidebar: React.FC<SidebarProps> = ({
             <i className="fa-solid fa-chevron-right text-purple-400 group-hover:text-purple-600 transition-colors text-[7px]"></i>
           </button>
           <button 
+            onClick={onInstructionDesignClick}
+            className="w-full flex items-center justify-between bg-white p-2 rounded-lg border border-rose-200 hover:bg-rose-100 hover:border-rose-300 transition-colors group shadow-sm"
+          >
+            <span className="text-[8px] font-black text-rose-600 uppercase tracking-widest">Instruction Design</span>
+            <i className="fa-solid fa-chevron-right text-rose-400 group-hover:text-rose-600 transition-colors text-[7px]"></i>
+          </button>
+
+          <button 
             onClick={onFormatDesignClick}
             className="w-full flex items-center justify-between bg-white p-2 rounded-lg border border-orange-200 hover:bg-orange-100 hover:border-orange-300 transition-colors group shadow-sm"
           >

@@ -2166,33 +2166,15 @@ ${componentLogic}
                 <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
                   {/* Templates Left (Half) */}
                   <div className="lg:col-span-1 space-y-4">
-                    <div className="flex items-center justify-between px-2 mb-4">
-                      <div className="flex items-center gap-2">
-                        <div className="h-1 w-4 bg-orange-500 rounded-full"></div>
-                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Templates (A-M)</h3>
-                      </div>
-                      <button 
-                        onClick={() => {
-                          const name = prompt("Enter new exercise type name (e.g., 'Circle the best answer'):");
-                          if (name) {
-                            const id = name.toLowerCase().replace(/\s+/g, '_');
-                            setCustomExerciseTypes(prev => [...prev, { 
-                              id, 
-                              name, 
-                              category: (activeModule.charAt(0).toUpperCase() + activeModule.slice(1).toLowerCase()) as any
-                            }]);
-                          }
-                        }}
-                        className="h-7 px-3 bg-slate-100 text-slate-600 rounded-lg text-[9px] font-bold uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center gap-2"
-                      >
-                        <i className="fa-solid fa-plus"></i> Add NEW
-                      </button>
+                    <div className="flex items-center gap-2 px-2 mb-4">
+                      <div className="h-1 w-4 bg-orange-500 rounded-full"></div>
+                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Templates (A-M)</h3>
                     </div>
                     <div className="space-y-3">
                       {instructionTemplates
                         .filter(t => t.category?.toUpperCase() === activeModule.toUpperCase())
                         .sort((a, b) => {
-                          const order = ['g_mcq', 'g_correct_incorrect', 'g_circle', 'g_best_rewrite', 'g_complete_sentences', 'g_pair', 'g_spelling'];
+                          const order = ['g_mcq', 'g_correct_incorrect', 'g_circle', 'g_complete_sentences', 'g_pair', 'g_spelling'];
                           const aIdx = order.indexOf(a.id);
                           const bIdx = order.indexOf(b.id);
                           if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
@@ -2383,33 +2365,15 @@ ${componentLogic}
 
                   {/* Templates Right (Half) */}
                   <div className="lg:col-span-1 space-y-4">
-                    <div className="flex items-center justify-between px-2 mb-4">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Templates (N-Z)</h3>
-                        <div className="h-1 w-4 bg-orange-500 rounded-full"></div>
-                      </div>
-                      <button 
-                        onClick={() => {
-                          const name = prompt("Enter new exercise type name (e.g., 'Circle the best answer'):");
-                          if (name) {
-                            const id = name.toLowerCase().replace(/\s+/g, '_');
-                            setCustomExerciseTypes(prev => [...prev, { 
-                              id, 
-                              name, 
-                              category: (activeModule.charAt(0).toUpperCase() + activeModule.slice(1).toLowerCase()) as any
-                            }]);
-                          }
-                        }}
-                        className="h-7 px-3 bg-slate-100 text-slate-600 rounded-lg text-[9px] font-bold uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center gap-2"
-                      >
-                        <i className="fa-solid fa-plus"></i> Add NEW
-                      </button>
+                    <div className="flex items-center gap-2 px-2 mb-4 justify-end">
+                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Templates (N-Z)</h3>
+                      <div className="h-1 w-4 bg-orange-500 rounded-full"></div>
                     </div>
                     <div className="space-y-3">
                       {instructionTemplates
                         .filter(t => t.category?.toUpperCase() === activeModule.toUpperCase())
                         .sort((a, b) => {
-                          const order = ['g_mcq', 'g_correct_incorrect', 'g_circle', 'g_best_rewrite', 'g_complete_sentences', 'g_pair', 'g_spelling'];
+                          const order = ['g_mcq', 'g_correct_incorrect', 'g_circle', 'g_complete_sentences', 'g_pair', 'g_spelling'];
                           const aIdx = order.indexOf(a.id);
                           const bIdx = order.indexOf(b.id);
                           if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
@@ -2927,13 +2891,7 @@ ${componentLogic}
                     { id: 11, name: 'Gradient Night', style: { background: 'linear-gradient(90deg, #1e293b, #475569)', color: 'white', padding: '12px', fontWeight: 'bold', textAlign: 'center', borderRadius: '4px' } },
                     { id: 12, name: 'Neon Emerald', style: { border: '2pt solid #10b981', color: '#065f46', padding: '10px', fontWeight: '900', textAlign: 'center', backgroundColor: '#ecfdf5' } },
                     { id: 13, name: 'Brutalist Yellow', style: { border: '3pt solid black', backgroundColor: '#facc15', color: 'black', padding: '10px', fontWeight: '900', textTransform: 'uppercase' } },
-                    { id: 14, name: 'Mix Styles', style: { background: 'repeating-linear-gradient(45deg, #f1f5f9, #f1f5f9 10px, #ffffff 10px, #ffffff 20px)', border: '1pt solid #cbd5e1', color: '#334155', padding: '10px', fontWeight: 'bold', textAlign: 'center' } },
-                    { id: 15, name: 'Royal Purple', style: { backgroundColor: '#581c87', color: 'white', padding: '10px', fontWeight: 'bold', border: '2pt solid #fbbf24', textAlign: 'center' } },
-                    { id: 16, name: 'Eco Leaf', style: { backgroundColor: '#14532d', color: 'white', padding: '10px', fontWeight: 'bold', borderRadius: '20px 0 20px 0' } },
-                    { id: 17, name: 'Sky Gradient', style: { background: 'linear-gradient(90deg, #0ea5e9, #38bdf8)', color: 'white', padding: '10px', fontWeight: 'bold', textAlign: 'center' } },
-                    { id: 18, name: 'Minimalist Dot', style: { border: '2pt dotted #64748b', color: '#475569', padding: '10px', fontWeight: 'bold' } },
-                    { id: 19, name: 'Bold Orange', style: { backgroundColor: '#ea580c', color: 'white', padding: '10px', fontWeight: '900', borderBottom: '4pt solid #9a3412' } },
-                    { id: 20, name: 'Zebra Style', style: { background: 'linear-gradient(90deg, #f8fafc 50%, #f1f5f9 50%)', backgroundSize: '40px 100%', border: '1pt solid #cbd5e1', color: '#1e293b', padding: '10px', fontWeight: 'bold', textAlign: 'center' } }
+                    { id: 14, name: 'Mix Styles', style: { background: 'repeating-linear-gradient(45deg, #f1f5f9, #f1f5f9 10px, #ffffff 10px, #ffffff 20px)', border: '1pt solid #cbd5e1', color: '#334155', padding: '10px', fontWeight: 'bold', textAlign: 'center' } }
                   ].map((style) => (
                     <div 
                       key={style.id}
