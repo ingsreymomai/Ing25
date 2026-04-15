@@ -1,74 +1,43 @@
 {
   "entities": {
-    "HistoryItem": {
-      "title": "HistoryItem",
-      "description": "A generated test worksheet",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "title": { "type": "string" },
-        "content": { "type": "string" },
-        "timestamp": { "type": "number" },
-        "uid": { "type": "string" }
-      },
-      "required": ["id", "title", "content", "timestamp", "uid"]
-    },
-    "CustomExerciseType": {
-      "title": "CustomExerciseType",
-      "description": "User-defined exercise type",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "category": { "type": "string", "enum": ["Grammar", "Reading", "Vocabulary", "Mixed"] },
-        "uid": { "type": "string" }
-      },
-      "required": ["id", "name", "category", "uid"]
-    },
     "CustomDesign": {
-      "title": "CustomDesign",
-      "description": "User-defined visual style for an exercise type",
+      "title": "Custom Design",
+      "description": "A custom test format design created by the user.",
       "type": "object",
       "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "type": { "type": "string" },
-        "html": { "type": "string" },
-        "css": { "type": "string" },
-        "uid": { "type": "string" }
+        "id": { "type": "string", "description": "Unique identifier for the design." },
+        "name": { "type": "string", "description": "Name of the design." },
+        "type": { "type": "string", "description": "Type of test (e.g., mcq, tf, matching)." },
+        "category": { "type": "string", "description": "Category (e.g., Grammar, Vocabulary)." },
+        "style": { "type": "object", "description": "Style configuration object." },
+        "prompt": { "type": "string", "description": "AI instructions for this design." },
+        "uid": { "type": "string", "description": "User ID of the owner." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp." }
       },
-      "required": ["id", "name", "type", "html", "uid"]
+      "required": ["id", "name", "type", "category", "style", "uid", "createdAt"]
     },
-    "UserSettings": {
-      "title": "UserSettings",
-      "description": "User-specific application settings and branding",
+    "UserSetting": {
+      "title": "User Setting",
+      "description": "Global settings for the user's workspace.",
       "type": "object",
       "properties": {
-        "schoolName": { "type": "string" },
-        "schoolAddress": { "type": "string" },
-        "logoData": { "type": "string" },
-        "activeFont": { "type": "string" },
-        "uid": { "type": "string" }
+        "uid": { "type": "string", "description": "User ID." },
+        "brandSettings": { "type": "object", "description": "Branding and logo settings." },
+        "paperStyles": { "type": "object", "description": "Default paper styles for different test types." },
+        "paperDesign": { "type": "number", "description": "Selected header design style ID." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp." }
       },
-      "required": ["uid"]
+      "required": ["uid", "updatedAt"]
     }
   },
   "firestore": {
-    "/history/{historyId}": {
-      "schema": "HistoryItem",
-      "description": "Collection of generated tests"
-    },
-    "/customExerciseTypes/{typeId}": {
-      "schema": "CustomExerciseType",
-      "description": "Collection of user-defined exercise types"
-    },
-    "/customDesigns/{designId}": {
+    "/custom_designs/{designId}": {
       "schema": "CustomDesign",
-      "description": "Collection of user-defined styles"
+      "description": "Collection of custom test designs."
     },
-    "/users/{userId}": {
-      "schema": "UserSettings",
-      "description": "User profile and settings"
+    "/user_settings/{userId}": {
+      "schema": "UserSetting",
+      "description": "User-specific settings and preferences."
     }
   }
 }

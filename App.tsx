@@ -277,7 +277,7 @@ function App() {
   useEffect(() => {
     if (!isAuthReady || !auth.currentUser) return;
 
-    const userSettingsRef = doc(db, 'users', auth.currentUser.uid);
+    const userSettingsRef = doc(db, 'user_settings', auth.currentUser.uid);
     
     const unsubscribe = onSnapshot(userSettingsRef, (docSnap) => {
       if (docSnap.exists()) {
@@ -287,7 +287,7 @@ function App() {
         if (data.paperDesign !== undefined) setPaperDesign(data.paperDesign);
       }
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, `users/${auth.currentUser?.uid}`);
+      handleFirestoreError(error, OperationType.GET, `user_settings/${auth.currentUser?.uid}`);
     });
 
     return () => unsubscribe();
@@ -297,55 +297,13 @@ function App() {
   useEffect(() => {
     if (!isAuthReady || !auth.currentUser) return;
 
-    const q = query(collection(db, 'customDesigns'), where('uid', '==', auth.currentUser.uid));
+    const q = query(collection(db, 'custom_designs'), where('uid', '==', auth.currentUser.uid));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const designs = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as any));
       setCustomDesigns(designs);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'customDesigns');
-    });
-
-    return () => unsubscribe();
-  }, [isAuthReady]);
-
-  // Sync custom exercise types with Firestore
-  useEffect(() => {
-    if (!isAuthReady || !auth.currentUser) return;
-
-    const q = query(collection(db, 'customExerciseTypes'), where('uid', '==', auth.currentUser.uid));
-    
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const types = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as any));
-      if (types.length > 0) {
-        setCustomExerciseTypes(prev => {
-          // Merge with defaults if needed, but usually we just want the cloud ones
-          return types;
-        });
-      }
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'customExerciseTypes');
-    });
-
-    return () => unsubscribe();
-  }, [isAuthReady]);
-
-  // Sync history with Firestore
-  useEffect(() => {
-    if (!isAuthReady || !auth.currentUser) return;
-
-    const q = query(
-      collection(db, 'history'), 
-      where('uid', '==', auth.currentUser.uid),
-      orderBy('timestamp', 'desc'),
-      limit(30)
-    );
-    
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const cloudHistory = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as HistoryItem));
-      setHistory(cloudHistory);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'history');
+      handleFirestoreError(error, OperationType.LIST, 'custom_designs');
     });
 
     return () => unsubscribe();
@@ -354,7 +312,7 @@ function App() {
   const saveSettingsToFirestore = async () => {
     if (!auth.currentUser) return;
     try {
-      const userSettingsRef = doc(db, 'users', auth.currentUser.uid);
+      const userSettingsRef = doc(db, 'user_settings', auth.currentUser.uid);
       await setDoc(userSettingsRef, {
         uid: auth.currentUser.uid,
         brandSettings,
@@ -363,47 +321,7 @@ function App() {
         updatedAt: Timestamp.now()
       }, { merge: true });
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, `users/${auth.currentUser.uid}`);
-    }
-  };
-
-  const handleAddCustomExerciseType = async () => {
-    const name = prompt("Enter new exercise type name (e.g., 'Circle the best answer'):");
-    if (name) {
-      const id = `custom_${Date.now()}`;
-      const newType: CustomExerciseType = { 
-        id, 
-        name, 
-        category: (activeModule.charAt(0).toUpperCase() + activeModule.slice(1).toLowerCase()) as any,
-        uid: auth.currentUser?.uid || 'anonymous'
-      };
-
-      // Update state
-      setCustomExerciseTypes(prev => [...prev, newType]);
-
-      // Save to Firestore if logged in
-      if (auth.currentUser) {
-        try {
-          await setDoc(doc(db, 'customExerciseTypes', id), newType);
-        } catch (error) {
-          handleFirestoreError(error, OperationType.WRITE, `customExerciseTypes/${id}`);
-        }
-      }
-    }
-  };
-
-  const handleDeleteCustomDesign = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this design?")) return;
-    
-    setCustomDesigns(prev => prev.filter(d => d.id !== id));
-    
-    if (auth.currentUser) {
-      try {
-        const { deleteDoc } = await import('firebase/firestore');
-        await deleteDoc(doc(db, 'customDesigns', id));
-      } catch (error) {
-        handleFirestoreError(error, OperationType.DELETE, `customDesigns/${id}`);
-      }
+      handleFirestoreError(error, OperationType.WRITE, `user_settings/${auth.currentUser.uid}`);
     }
   };
   const [isAssistantVisible, setIsAssistantVisible] = useState(false);
@@ -431,7 +349,6 @@ function App() {
   const [isRandomSubject, setIsRandomSubject] = useState(false);
   const [showSubjectModal, setShowSubjectModal] = useState(false);
   const [globalLayout, setGlobalLayout] = useState<number>(0); // 0-19: Paper Styles
-  const [tableStyle, setTableStyle] = useState<string>('plain'); // plain, grid, list
   const [baseLayout, setBaseLayout] = useState<number>(() => {
     const saved = localStorage.getItem('dp_base_layout');
     return saved ? parseInt(saved) : 0;
@@ -1572,51 +1489,86 @@ ${customHtml}
         blueprintStr = `(DO NOT USE A PRE-ASSIGNED ANSWER KEY. Generate natural, accurate answers for the Teacher Answer Key based on the text.)`;
       }
 
-      let formatInstruction = '';
+      const formatInstruction = '';
       
-      // Use overrideCol if it's > 0, otherwise default to 1 for plain/list, and 2 for grid
-      const effectiveCols = overrideCol > 0 ? overrideCol : (tableStyle === 'grid' ? 2 : 1);
+      // Use overrideCol if it's > 0, otherwise use defaultColumnCount
+      const effectiveCols = overrideCol > 0 ? overrideCol : defaultColumnCount;
+      const isForcedList = overrideCol === 0 && defaultColumnCount === 1 && ![2, 3, 4].includes(baseLayout);
 
-      if (tableStyle === 'plain') {
+      if (isForcedList) {
+        formatInstruction = `(FORMAT: Standard numbered list. ${isPartBackgroundEnabled ? 'MANDATORY: Wrap the entire part in a <div class="..."> with a unique background style class from the PART BACKGROUND PROTOCOL.' : ''} Every numbered item (1., 2., 3., etc.) MUST start on a NEW LINE using an HTML <p> or <br> tag. DO NOT bunch them together in a single paragraph. DO NOT use tables or columns.)`;
+      } else if (baseLayout === 0 || (baseLayout === 3 && effectiveCols === 1)) {
+        // Option 1 (Clean) or Option 4 with 1 column override
         if (effectiveCols > 1) {
           formatInstruction = `(MANDATORY FORMAT: Use a real HTML <table> with ${effectiveCols} columns. 
             ${isPartBackgroundEnabled ? 'MANDATORY: Apply a unique background style class from the PART BACKGROUND PROTOCOL to this <table> tag.' : ''}
             - Row 1: Header row spanning all ${effectiveCols} columns (colspan="${effectiveCols}"), with ${headerStyle}. Title: "PART ${String.fromCharCode(65 + idx)}: ${t.professionalLabel || t.label}".
             - Row 2: Distribute the ${overrideItems} items STRICTLY EVENLY across ${effectiveCols} columns. (e.g. if 10 items, put 5 in Col 1 and 5 in Col 2).
             - MANDATORY: Every numbered item (1., 2., 3., etc.) MUST start on a NEW LINE using an HTML <p> or <br> tag. DO NOT bunch them together.
-            - The table MUST have an outer border: 1.5pt solid #334155.
-            - DO NOT put borders between the items inside the cells. This is the "Plain" layout with ${effectiveCols} columns.)`;
+            - The table MUST have a border: 1.5pt solid #334155.
+            - DO NOT put borders between the items inside the cells. This is the "Clean" layout with ${effectiveCols} columns.)`;
         } else {
           formatInstruction = `(MANDATORY FORMAT: Use a real HTML <table> with 1 column and EXACTLY 2 rows. 
             ${isPartBackgroundEnabled ? 'MANDATORY: Apply a unique background style class from the PART BACKGROUND PROTOCOL to this <table> tag.' : ''}
             - Row 1: Header row with ${headerStyle}. Title: "PART ${String.fromCharCode(65 + idx)}: ${t.professionalLabel || t.label}".
             - Row 2: A single <td> containing ALL ${overrideItems} items. MANDATORY: Every numbered item (1., 2., 3., etc.) MUST start on a NEW LINE using an HTML <p> or <br> tag. DO NOT bunch them together in a single paragraph.
-            - The table MUST have an outer border: 1.5pt solid #334155.
-            - DO NOT put borders between the items inside the second row. This is the "Plain" layout.)`;
+            - The table MUST have a border: 1.5pt solid #334155.
+            - DO NOT put borders between the items inside the second row. This is the "Clean" layout.)`;
         }
-      } else if (tableStyle === 'grid') {
+      } else if (baseLayout === 1) {
+        // Option 2 (Lined): 1 column, multiple rows (Header + One row per item)
+        if (effectiveCols > 1) {
+          formatInstruction = `(MANDATORY FORMAT: Use a real HTML <table> with ${effectiveCols} columns. 
+            ${isPartBackgroundEnabled ? 'MANDATORY: Apply a unique background style class from the PART BACKGROUND PROTOCOL to this <table> tag.' : ''}
+            - Row 1: Header row spanning all ${effectiveCols} columns (colspan="${effectiveCols}"), with ${headerStyle}. Title: "PART ${String.fromCharCode(65 + idx)}: ${t.professionalLabel || t.label}".
+            - Subsequent rows: Distribute the ${overrideItems} items STRICTLY EVENLY across ${effectiveCols} columns.
+            - Every <td> MUST have a border: 1pt solid #334155; padding: 10px;
+            - This creates a lined grid with ${effectiveCols} columns.)`;
+        } else {
+          formatInstruction = `(MANDATORY FORMAT: Use a real HTML <table> with 1 column. 
+            ${isPartBackgroundEnabled ? 'MANDATORY: Apply a unique background style class from the PART BACKGROUND PROTOCOL to this <table> tag.' : ''}
+            - Row 1: Header row with ${headerStyle}. Title: "PART ${String.fromCharCode(65 + idx)}: ${t.professionalLabel || t.label}".
+            - Subsequent rows: Each row contains EXACTLY ONE item.
+            - Every <td> MUST have a border: 1pt solid #334155; padding: 10px;
+            - This creates lines between every question.)`;
+        }
+      } else if (baseLayout === 2) {
+        // Option 3 (Grid): 2 columns, multiple rows (Header + Items distributed)
         formatInstruction = `(MANDATORY FORMAT: Use a real HTML <table> with ${effectiveCols} columns. 
             ${isPartBackgroundEnabled ? 'MANDATORY: Apply a unique background style class from the PART BACKGROUND PROTOCOL to this <table> tag.' : ''}
             - Row 1: Header row spanning all ${effectiveCols} columns (colspan="${effectiveCols}"), with ${headerStyle}. Title: "PART ${String.fromCharCode(65 + idx)}: ${t.professionalLabel || t.label}".
             - Subsequent rows: Distribute the ${overrideItems} items STRICTLY EVENLY across ${effectiveCols} columns (one item per cell).
             - Every <td> MUST have a border: 1pt solid #334155; padding: 10px; vertical-align: top;
             - This creates a professional worksheet grid with ${effectiveCols} columns.)`;
-      } else if (tableStyle === 'list') {
-        if (effectiveCols > 1) {
-          formatInstruction = `(MANDATORY FORMAT: Use a real HTML <table> with ${effectiveCols} columns. 
+      } else if (baseLayout === 3) {
+        // Option 4 (Vertical Ruler Middle): 2 columns with a middle ruler
+        formatInstruction = `(MANDATORY FORMAT: Use a real HTML <table> with 2 columns. 
             ${isPartBackgroundEnabled ? 'MANDATORY: Apply a unique background style class from the PART BACKGROUND PROTOCOL to this <table> tag.' : ''}
-            - Row 1: Header row spanning all ${effectiveCols} columns (colspan="${effectiveCols}"), with ${headerStyle}. Title: "PART ${String.fromCharCode(65 + idx)}: ${t.professionalLabel || t.label}".
-            - Subsequent rows: Distribute the ${overrideItems} items STRICTLY EVENLY across ${effectiveCols} columns.
-            - Every <td> MUST have a bottom border: 1pt solid #334155; padding: 10px;
-            - This creates a lined list with ${effectiveCols} columns.)`;
-        } else {
-          formatInstruction = `(MANDATORY FORMAT: Use a real HTML <table> with 1 column. 
-            ${isPartBackgroundEnabled ? 'MANDATORY: Apply a unique background style class from the PART BACKGROUND PROTOCOL to this <table> tag.' : ''}
-            - Row 1: Header row with ${headerStyle}. Title: "PART ${String.fromCharCode(65 + idx)}: ${t.professionalLabel || t.label}".
-            - Subsequent rows: Each row contains EXACTLY ONE item.
-            - Every <td> MUST have a bottom border: 1pt solid #334155; padding: 10px;
-            - This creates horizontal lines between every question.)`;
-        }
+            - Row 1: Header row spanning both columns (colspan="2"), with ${headerStyle}. Title: "PART ${String.fromCharCode(65 + idx)}: ${t.professionalLabel || t.label}".
+            - Subsequent rows: Distribute the ${overrideItems} items STRICTLY EVENLY across 2 columns.
+            - MANDATORY: The <table> MUST have a class="ruler-table". 
+            - The middle border between columns MUST be a solid 1.5pt line (the "ruler").
+            - DO NOT use outer borders. ONLY the middle vertical border is allowed.
+            - [CRITICAL]: If you do not use a 2-column table for EVERY part, the middle ruler line will be broken. This is the "Middle Ruler" layout where content is split into two halves.)`;
+      } else if (baseLayout === 4) {
+        // Option 5 (Rulers Left): 2 columns, 1 row (Header) + N rows (Items)
+        formatInstruction = `(MANDATORY FORMAT: Use a real HTML <table> with 2 columns. 
+          - Row 1: Header row spanning both columns (colspan="2"), with ${headerStyle}. Title: "PART ${String.fromCharCode(65 + idx)}: ${t.professionalLabel || t.label}".
+          - Subsequent Rows: Each row MUST have EXACTLY 2 cells (<td>). 
+          - Cell 1: The Question Number and Instruction (e.g. "1. Choose the correct answer:").
+          - Cell 2: The actual question content or MCQ options.
+          - MANDATORY: The table MUST have a vertical border between the two columns to act as a "Ruler".
+          - Use class="ruler-table" for the <table> tag.
+          - This is the "Ruler" layout where the left column is for numbering and the right column is for content.)`;
+      } else if (baseLayout >= 5) {
+        // Options 6-9 (S1-S4): Similar to Clean but with different background lines
+        formatInstruction = `(MANDATORY FORMAT: Use a real HTML <table> with 1 column and EXACTLY 2 rows. 
+          - Row 1: Header row with ${headerStyle}. Title: "PART ${String.fromCharCode(65 + idx)}: ${t.professionalLabel || t.label}".
+          - Row 2: A single <td> containing ALL ${overrideItems} items. MANDATORY: Every numbered item (1., 2., 3., etc.) MUST start on a NEW LINE using an HTML <p> or <br> tag.
+          - The table MUST have a border: 1.5pt solid #334155.
+          - This is a "Lined" layout with special background lines.)`;
+      } else {
+        formatInstruction = `(FORMAT: Standard numbered list. ${isPartBackgroundEnabled ? 'MANDATORY: Wrap the entire part in a <div class="..."> with a unique background style class from the PART BACKGROUND PROTOCOL.' : ''} Every numbered item (1., 2., 3., etc.) MUST start on a NEW LINE using an HTML <p> or <br> tag. DO NOT bunch them together in a single paragraph. DO NOT use tables or columns.)`;
       }
         
       const rawHeader = t.professionalLabel || t.label;
@@ -1736,9 +1688,9 @@ ${componentLogic}
         level: activeLevel,
         topic: topic,
         // Add who created it
-        authorName: auth.currentUser?.displayName || session?.name || 'Anonymous',
-        authorEmail: auth.currentUser?.email || session?.email || 'N/A',
-        uid: auth.currentUser?.uid || 'anonymous'
+        authorName: session?.name || 'Anonymous',
+        authorCode: session?.code || 'N/A',
+        authorEmail: session?.email || 'N/A'
       };
 
       // 3. Update Local History (so you see it on screen)
@@ -1748,13 +1700,13 @@ ${componentLogic}
       });
 
       // 4. SEND TO THE CLOUD (The Magic Step!)
-      if (auth.currentUser) {
-        try {
-             await setDoc(doc(db, 'history', newTestItem.id), newTestItem);
-             console.log("✅☁️ Test successfully saved to the Firebase Cloud Notebook!");
-        } catch (e) {
-             handleFirestoreError(e, OperationType.WRITE, `history/${newTestItem.id}`);
-        }
+      try {
+           // This line sends the data to a collection named 'generatedTests' in your Firebase database
+           await addDoc(collection(db, 'generatedTests'), newTestItem);
+           console.log("✅☁️ Test successfully saved to the Firebase Cloud Notebook!");
+      } catch (e) {
+           // If something goes wrong, tell the console
+           handleFirestoreError(e, 'create' as any, 'generatedTests');
       }
     } catch (error: any) {
       console.error("Generation failed:", error);
@@ -2071,9 +2023,6 @@ ${componentLogic}
             onWidthChange={setSidebarWidth}
             side={sidebarSide}
             onSideChange={setSidebarSide}
-            user={auth.currentUser}
-            onLogin={handleGoogleLogin}
-            onLogout={handleLogout}
           />
 
           <main 
@@ -2108,6 +2057,23 @@ ${componentLogic}
                 )}
                 
                 <div className="flex items-center gap-4">
+                  <button 
+                    onClick={() => {
+                      const name = prompt("Enter new exercise type name (e.g., 'Circle the best answer'):");
+                      if (name) {
+                        const id = name.toLowerCase().replace(/\s+/g, '_');
+                        setCustomExerciseTypes(prev => [...prev, { 
+                          id, 
+                          name, 
+                          category: (activeModule.charAt(0).toUpperCase() + activeModule.slice(1).toLowerCase()) as any
+                        }]);
+                      }
+                    }}
+                    className="px-6 lg:px-8 py-3 bg-blue-600 text-white rounded-xl text-[11px] font-bold uppercase tracking-widest flex items-center gap-3 hover:bg-blue-700 transition-all shadow-lg shadow-blue-200/50 active:scale-95 whitespace-nowrap"
+                  >
+                    <i className="fa-solid fa-plus"></i> Add New Exercise Type
+                  </button>
+
                   <button 
                     onClick={handleGenerate}
                     disabled={isGenerating}
@@ -2210,6 +2176,22 @@ ${componentLogic}
                         <div className="h-1 w-4 bg-orange-500 rounded-full"></div>
                         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Templates (A-M)</h3>
                       </div>
+                      <button 
+                        onClick={() => {
+                          const name = prompt("Enter new exercise type name (e.g., 'Circle the best answer'):");
+                          if (name) {
+                            const id = name.toLowerCase().replace(/\s+/g, '_');
+                            setCustomExerciseTypes(prev => [...prev, { 
+                              id, 
+                              name, 
+                              category: (activeModule.charAt(0).toUpperCase() + activeModule.slice(1).toLowerCase()) as any
+                            }]);
+                          }
+                        }}
+                        className="h-7 px-3 bg-slate-100 text-slate-600 rounded-lg text-[9px] font-bold uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center gap-2"
+                      >
+                        <i className="fa-solid fa-plus"></i> ADD NEW TYPE
+                      </button>
                     </div>
                     <div className="space-y-3">
                       {instructionTemplates
@@ -2315,7 +2297,7 @@ ${componentLogic}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {instructionTemplates.filter(t => t.category?.toUpperCase() === activeModule.toUpperCase() && selectedInstructionIds.includes(t.id)).map((t, idx) => {
                           const curItems = itemCountOverrides[t.id] || 10;
-                          const curCols = columnOverrides[t.id] !== undefined ? columnOverrides[t.id] : (t.columnCount !== undefined ? t.columnCount : defaultColumnCount);
+                          const curCols = columnOverrides[t.id] !== undefined ? columnOverrides[t.id] : (t.columnCount !== undefined ? t.columnCount : (globalLayout === 2 ? 2 : 1));
                           
                           // Diverse color mapping based on index
                           const colors = ['orange', 'blue', 'emerald', 'rose', 'violet', 'amber', 'indigo', 'cyan'];
@@ -2411,6 +2393,22 @@ ${componentLogic}
                         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Templates (N-Z)</h3>
                         <div className="h-1 w-4 bg-orange-500 rounded-full"></div>
                       </div>
+                      <button 
+                        onClick={() => {
+                          const name = prompt("Enter new exercise type name (e.g., 'Circle the best answer'):");
+                          if (name) {
+                            const id = name.toLowerCase().replace(/\s+/g, '_');
+                            setCustomExerciseTypes(prev => [...prev, { 
+                              id, 
+                              name, 
+                              category: (activeModule.charAt(0).toUpperCase() + activeModule.slice(1).toLowerCase()) as any
+                            }]);
+                          }
+                        }}
+                        className="h-7 px-3 bg-slate-100 text-slate-600 rounded-lg text-[9px] font-bold uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center gap-2"
+                      >
+                        <i className="fa-solid fa-plus"></i> ADD NEW TYPE
+                      </button>
                     </div>
                     <div className="space-y-3">
                       {instructionTemplates
@@ -2818,8 +2816,14 @@ ${componentLogic}
                   
                   <div className="relative flex justify-center">
                     <div className={`w-full max-w-[500px] aspect-[1/1.414] bg-white shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] rounded-sm overflow-hidden transition-all duration-700 ${
-                      tableStyle === 'list' ? 'layout-lined' : 
-                      tableStyle === 'grid' ? 'layout-grid' : ''
+                      baseLayout === 1 ? 'layout-lined' : 
+                      baseLayout === 2 ? 'layout-grid' : 
+                      baseLayout === 3 ? 'layout-vertical-middle' :
+                      baseLayout === 4 ? 'layout-rulers' : 
+                      baseLayout === 5 ? 'layout-s1' :
+                      baseLayout === 6 ? 'layout-s2' :
+                      baseLayout === 7 ? 'layout-s3' :
+                      baseLayout === 8 ? 'layout-s4' : ''
                     } ${
                       globalLayout === 0 ? 'layout-clean-white' :
                       globalLayout === 1 ? 'layout-orange-mix' :
@@ -2882,6 +2886,65 @@ ${componentLogic}
         </section>
       )}
 
+      {viewMode === 'instruction_design' && (
+        <section 
+          style={{ 
+            marginLeft: isSidebarOpen && sidebarSide === 'left' ? (windowWidth >= 1024 ? `${sidebarWidth}px` : '0px') : '0px',
+            marginRight: isSidebarOpen && sidebarSide === 'right' ? (windowWidth >= 1024 ? `${sidebarWidth}px` : '0px') : '0px'
+          }}
+          className="flex-1 flex flex-col overflow-hidden animate-in fade-in duration-500 bg-slate-50 transition-all duration-300"
+        >
+          <div className="p-4 lg:p-6 bg-white border-b border-slate-200 flex flex-wrap gap-4 justify-between items-center z-10 no-print shadow-sm">
+            <button onClick={() => setViewMode('generator')} className="border border-slate-200 text-slate-600 px-6 lg:px-8 py-3 rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-slate-50 flex items-center gap-4 group transition-all">
+              <i className="fa-solid fa-arrow-left group-hover:-translate-x-1 transition-transform"></i> WORKSPACE
+            </button>
+            <div className="flex-1 text-center">
+              <h2 className="text-slate-800 font-bold uppercase tracking-widest text-[12px]">Table/column Styles Workspace</h2>
+            </div>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => setViewMode('generator')}
+                className="px-6 py-3 bg-rose-600 text-white rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-rose-700 shadow-sm flex items-center gap-2 transition-all"
+              >
+                <i className="fa-solid fa-check"></i> Save & Apply
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 bg-slate-50 overflow-y-auto p-8 no-scrollbar">
+            <div className="max-w-4xl mx-auto space-y-10">
+              <div className="bg-white rounded-[32px] p-10 border border-slate-100 shadow-sm">
+                <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight">Exercise Layout Architect</h3>
+                <p className="text-sm text-slate-500 mb-8">Choose the number of columns for your exercise lists (1 to 6 columns).</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[1, 2, 3, 4, 5, 6].map((cols) => (
+                    <div 
+                      key={cols}
+                      onClick={() => setDefaultColumnCount(cols)}
+                      className={`p-6 rounded-2xl border-2 cursor-pointer transition-all ${defaultColumnCount === cols ? 'border-rose-500 bg-rose-50/30 shadow-md' : 'border-slate-200 hover:border-rose-300 bg-white'}`}
+                    >
+                      <div className="flex justify-between items-center mb-4">
+                        <h5 className="font-bold text-slate-700">{cols} {cols === 1 ? 'Column' : 'Columns'}</h5>
+                        {defaultColumnCount === cols && <div className="h-6 w-6 bg-rose-500 text-white rounded-full flex items-center justify-center text-xs"><i className="fa-solid fa-check"></i></div>}
+                      </div>
+                      <div className="bg-white p-4 border border-slate-100 rounded-xl min-h-[120px]">
+                        <div className={`grid grid-cols-${cols} gap-2`}>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].slice(0, cols * 2).map(i => (
+                            <div key={i} className="text-[8px] text-slate-400 border border-slate-50 p-1 rounded bg-slate-50/50">
+                              {i}. Question item...
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {viewMode === 'design_test_style' && (
         <section 
           style={{ 
@@ -2914,23 +2977,15 @@ ${componentLogic}
                     <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight">Design Test Style Library</h3>
                     <p className="text-sm text-slate-500">Customize the visual structure and default formatting for each question type.</p>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <button 
-                      onClick={handleAddCustomExerciseType}
-                      className="px-6 py-3 bg-slate-100 text-slate-700 rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-slate-200 shadow-sm flex items-center gap-2 transition-all"
-                    >
-                      <i className="fa-solid fa-plus"></i> Add New Exercise Type
-                    </button>
-                    <button 
-                      onClick={() => {
-                        setSettingsTab('FORMAT_DESIGN');
-                        setShowSettings(true);
-                      }}
-                      className="px-6 py-3 bg-blue-600 text-white rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-blue-700 shadow-lg shadow-blue-100 flex items-center gap-2 transition-all"
-                    >
-                      <i className="fa-solid fa-wand-magic-sparkles"></i> Create Custom Format
-                    </button>
-                  </div>
+                  <button 
+                    onClick={() => {
+                      setSettingsTab('FORMAT_DESIGN');
+                      setShowSettings(true);
+                    }}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-blue-700 shadow-lg shadow-blue-100 flex items-center gap-2 transition-all"
+                  >
+                    <i className="fa-solid fa-wand-magic-sparkles"></i> Create Custom Format
+                  </button>
                 </div>
                 
                 <div className="flex gap-2 mb-10 border-b border-slate-200 pb-4">
@@ -3197,42 +3252,6 @@ ${componentLogic}
                               <i className={`fa-solid ${style.icon}`}></i>
                             </div>
                             {globalLayout === style.id && <div className="h-8 w-8 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-lg animate-in zoom-in"><i className="fa-solid fa-check"></i></div>}
-                          </div>
-                          <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight mb-2">{style.name}</h4>
-                          <p className="text-xs font-medium text-slate-500 leading-relaxed">{style.desc}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </CollapsibleSection>
-                </div>
-
-                {/* Table Styles Section */}
-                <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm">
-                  <CollapsibleSection
-                    title="Table Styles"
-                    subtitle="Choose the visual style for tables and columns in your exercises."
-                    icon="fa-table"
-                    iconBg="bg-purple-100"
-                    iconColor="text-purple-600"
-                    isCollapsed={!!collapsedSections['table_styles']}
-                    onToggle={() => setCollapsedSections(prev => ({ ...prev, table_styles: !prev.table_styles }))}
-                  >
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
-                      {[
-                        { id: 'plain', name: 'Plain Tables', desc: 'Clean layout with minimal borders.', icon: 'fa-table-cells-large' },
-                        { id: 'grid', name: 'Grid Tables', desc: 'Standard grid with all borders visible.', icon: 'fa-table-cells' },
-                        { id: 'list', name: 'List Tables', desc: 'Horizontal lines only, list style.', icon: 'fa-table-list' },
-                      ].map((style) => (
-                        <div 
-                          key={style.id}
-                          onClick={() => setTableStyle(style.id)}
-                          className={`p-8 rounded-[40px] border-2 cursor-pointer transition-all ${tableStyle === style.id ? 'border-purple-500 bg-purple-50/30 shadow-xl scale-[1.02]' : 'border-slate-100 bg-white hover:border-purple-200 shadow-sm'}`}
-                        >
-                          <div className="flex justify-between items-start mb-6">
-                            <div className={`h-14 w-14 rounded-2xl flex items-center justify-center text-2xl ${tableStyle === style.id ? 'bg-purple-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
-                              <i className={`fa-solid ${style.icon}`}></i>
-                            </div>
-                            {tableStyle === style.id && <div className="h-8 w-8 bg-purple-500 text-white rounded-full flex items-center justify-center shadow-lg animate-in zoom-in"><i className="fa-solid fa-check"></i></div>}
                           </div>
                           <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight mb-2">{style.name}</h4>
                           <p className="text-xs font-medium text-slate-500 leading-relaxed">{style.desc}</p>
@@ -3568,7 +3587,9 @@ ${componentLogic}
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleDeleteCustomDesign(design.id);
+                                  if (confirm("Delete this custom style?")) {
+                                    setCustomDesigns(prev => prev.filter(d => d.id !== design.id));
+                                  }
                                 }}
                                 className="h-6 w-6 text-slate-300 hover:text-rose-500 transition-colors"
                               >
@@ -3710,7 +3731,9 @@ ${componentLogic}
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleDeleteCustomDesign(design.id);
+                                  if (confirm("Delete this custom style?")) {
+                                    setCustomDesigns(prev => prev.filter(d => d.id !== design.id));
+                                  }
                                 }}
                                 className="h-6 w-6 text-slate-300 hover:text-rose-500 transition-colors"
                               >
@@ -3881,7 +3904,9 @@ ${componentLogic}
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleDeleteCustomDesign(design.id);
+                                  if (confirm("Delete this custom style?")) {
+                                    setCustomDesigns(prev => prev.filter(d => d.id !== design.id));
+                                  }
                                 }}
                                 className="h-6 w-6 text-slate-300 hover:text-rose-500 transition-colors"
                               >
@@ -3986,7 +4011,9 @@ ${componentLogic}
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleDeleteCustomDesign(design.id);
+                                  if (confirm("Delete this custom style?")) {
+                                    setCustomDesigns(prev => prev.filter(d => d.id !== design.id));
+                                  }
                                 }}
                                 className="h-6 w-6 text-slate-300 hover:text-rose-500 transition-colors"
                               >
@@ -4069,7 +4096,9 @@ ${componentLogic}
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleDeleteCustomDesign(design.id);
+                                  if (confirm("Delete this custom style?")) {
+                                    setCustomDesigns(prev => prev.filter(d => d.id !== design.id));
+                                  }
                                 }}
                                 className="h-6 w-6 text-slate-300 hover:text-rose-500 transition-colors"
                               >
@@ -4158,7 +4187,9 @@ ${componentLogic}
                               <button 
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleDeleteCustomDesign(design.id);
+                                  if (confirm("Delete this custom style?")) {
+                                    setCustomDesigns(prev => prev.filter(d => d.id !== design.id));
+                                  }
                                 }}
                                 className="h-6 w-6 text-slate-300 hover:text-rose-500 transition-colors"
                               >
@@ -5527,10 +5558,10 @@ ${componentLogic}
                           
                           if (auth.currentUser) {
                             try {
-                              const designRef = doc(db, 'customDesigns', editingCustomDesignId);
+                              const designRef = doc(db, 'custom_designs', editingCustomDesignId);
                               await setDoc(designRef, updatedDesign, { merge: true });
                             } catch (error) {
-                              handleFirestoreError(error, OperationType.WRITE, `customDesigns/${editingCustomDesignId}`);
+                              handleFirestoreError(error, OperationType.WRITE, `custom_designs/${editingCustomDesignId}`);
                             }
                           }
                           setEditingCustomDesignId(null);
@@ -5542,8 +5573,7 @@ ${componentLogic}
                             type: normalizedType,
                             category: design.category,
                             style: design.style,
-                            prompt: `Apply custom design format for ${design.category}`,
-                            uid: auth.currentUser?.uid || 'anonymous'
+                            prompt: `Apply custom design format for ${design.category}`
                           };
                           
                           console.log('Saving new design:', newDesign);
@@ -5552,13 +5582,14 @@ ${componentLogic}
                           // Save to Firestore if logged in
                           if (auth.currentUser) {
                             try {
-                              const designRef = doc(db, 'customDesigns', newDesign.id);
+                              const designRef = doc(db, 'custom_designs', newDesign.id);
                               await setDoc(designRef, {
                                 ...newDesign,
+                                uid: auth.currentUser.uid,
                                 createdAt: Timestamp.now()
                               });
                             } catch (error) {
-                              handleFirestoreError(error, OperationType.WRITE, `customDesigns/${newDesign.id}`);
+                              handleFirestoreError(error, OperationType.WRITE, `custom_designs/${newDesign.id}`);
                             }
                           }
                           

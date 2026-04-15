@@ -137,5 +137,4 @@ export interface CustomExerciseType {
   name: string;
   category: RuleCategory;
   styleId?: string;
-  uid?: string;
 }
