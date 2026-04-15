@@ -143,7 +143,7 @@ const Worksheet: React.FC<WorksheetProps> = ({
 
   return (
     <div className="flex-1 overflow-auto p-2 md:p-12 no-scrollbar bg-slate-200/50">
-      <div className="w-full max-w-[210mm] mx-auto pb-64 shadow-2xl worksheet-paper transition-transform duration-300 ease-in-out" style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top center' }}>
+      <div id="worksheet-container" className="w-full max-w-[210mm] mx-auto pb-64 shadow-2xl worksheet-paper transition-transform duration-300 ease-in-out" style={{ transform: `scale(${zoom / 100})`, transformOrigin: 'top center' }}>
         <style>{`
           * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
           .prose { 
@@ -223,6 +223,24 @@ const Worksheet: React.FC<WorksheetProps> = ({
           ` : ''}
           ${instructionHeaderStyle === 13 ? `
             .prose .header-row, .prose tr:first-child td[colspan] { border: 3pt solid black !important; color: black !important; text-transform: uppercase !important; font-weight: 900 !important; }
+          ` : ''}
+          ${instructionHeaderStyle === 15 ? `
+            .prose .header-row, .prose tr:first-child td[colspan] { background-color: #581c87 !important; color: white !important; border: 2pt solid #fbbf24 !important; text-align: center !important; }
+          ` : ''}
+          ${instructionHeaderStyle === 16 ? `
+            .prose .header-row, .prose tr:first-child td[colspan] { background-color: #14532d !important; color: white !important; border-radius: 20pt 0 20pt 0 !important; padding-left: 20pt !important; }
+          ` : ''}
+          ${instructionHeaderStyle === 17 ? `
+            .prose .header-row, .prose tr:first-child td[colspan] { background: linear-gradient(90deg, #0ea5e9, #38bdf8) !important; color: white !important; text-align: center !important; }
+          ` : ''}
+          ${instructionHeaderStyle === 18 ? `
+            .prose .header-row, .prose tr:first-child td[colspan] { border: 2pt dotted #64748b !important; color: #475569 !important; background: transparent !important; }
+          ` : ''}
+          ${instructionHeaderStyle === 19 ? `
+            .prose .header-row, .prose tr:first-child td[colspan] { background-color: #ea580c !important; color: white !important; border-bottom: 4pt solid #9a3412 !important; font-weight: 900 !important; }
+          ` : ''}
+          ${instructionHeaderStyle === 20 ? `
+            .prose .header-row, .prose tr:first-child td[colspan] { background: linear-gradient(90deg, #f8fafc 50%, #f1f5f9 50%) !important; background-size: 40px 100% !important; border: 1pt solid #cbd5e1 !important; color: #1e293b !important; text-align: center !important; }
           ` : ''}
           ${instructionHeaderStyle === 14 ? `
             /* Mix Styles - No global override, let AI generate specific styles */

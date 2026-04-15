@@ -106,6 +106,8 @@ export interface BrandSettings {
   logoData?: string;
   activeFont?: string;
   randomizeFont?: boolean;
+  customHeaderText?: string;
+  headerRulerStyle?: number;
 }
 
 export interface UserSession {
