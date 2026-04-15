@@ -942,7 +942,7 @@ const Worksheet: React.FC<WorksheetProps> = ({
           className={clsx(
             "worksheet-page prose min-h-[297mm] p-[0.8in_1in] relative rounded-sm",
             PAPER_DESIGNS[paperDesign] || '',
-            isColorfulBackgroundEnabled ? 'bg-blue-50/50' : 'bg-white',
+            isColorfulBackgroundEnabled ? 'bg-white' : 'bg-white',
             baseLayout === 1 && 'layout-lined',
             baseLayout === 2 && 'layout-grid',
             baseLayout === 3 && 'layout-vertical-middle',

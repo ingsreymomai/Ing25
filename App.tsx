@@ -428,40 +428,21 @@ function App() {
   const [isColorfulBackgroundEnabled, setIsColorfulBackgroundEnabled] = useState(true);
   const [instructionCase, setInstructionCase] = useState<'uppercase' | 'lowercase' | 'random'>('uppercase');
   const [activeSubject, setActiveSubject] = useState<string>('cambodia');
-  const [isRandomSubject, setIsRandomSubject] = useState(false);
+  const [isRandomSubject, setIsRandomSubject] = useState(true);
   const [showSubjectModal, setShowSubjectModal] = useState(false);
-  const [globalLayout, setGlobalLayout] = useState<number>(0); // 0-19: Paper Styles
-  const [baseLayout, setBaseLayout] = useState<number>(() => {
-    const saved = localStorage.getItem('dp_base_layout');
-    return saved ? parseInt(saved) : 0;
-  }); // 0: Clean, 1: Lined, 2: Grid, 3: Vertical Middle, 4: Rulers Left, 5-8: S1-S4
-  const [instructionRulerStyle, setInstructionRulerStyle] = useState<number>(() => {
-    const saved = localStorage.getItem('dp_instruction_ruler');
-    return saved ? parseInt(saved) : 0;
-  }); // 0: None, 1-6: S1-S6
+  const [globalLayout, setGlobalLayout] = useState<number>(13); // Option 14: Bubbles
+  const [baseLayout, setBaseLayout] = useState<number>(0); // 0: Clean, 1: Lined, 2: Grid, 3: Vertical Middle
+  const [instructionRulerStyle, setInstructionRulerStyle] = useState<number>(4); // Divider 4: Ruler S1
   const [isBottomPanelHidden, setIsBottomPanelHidden] = useState(false);
   const [isCountriesHidden, setIsCountriesHidden] = useState(false);
   const [customArchitectSubTab, setCustomArchitectSubTab] = useState<string>('All');
-  const [paperDesign, setPaperDesign] = useState<number>(() => {
-    try {
-      const saved = localStorage.getItem('paperDesign');
-      return saved !== null ? parseInt(saved) : 18; // Default to Style 9: Modern Green
-    } catch {
-      return 18;
-    }
-  });
-  const [instructionHeaderStyle, setInstructionHeaderStyle] = useState<number>(0); // 0: Default, 1-10: Styles
-  const [defaultColumnCount, setDefaultColumnCount] = useState<number>(1); // 1-6 columns
+  const [paperDesign, setPaperDesign] = useState<number>(8); // Style 9: Modern Red
+  const [instructionHeaderStyle, setInstructionHeaderStyle] = useState<number>(13); // Style 13: Green
+  const [defaultColumnCount, setDefaultColumnCount] = useState<number>(2); // 2 columns
   const [architectTab, setArchitectTab] = useState<'Grammar' | 'Vocabulary' | 'Reading' | 'Mixed' | 'Generals' | 'Custom'>('Grammar');
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
-  const [mcqLayout, setMcqLayout] = useState<'single' | 'double' | 'quad'>(() => {
-    const saved = localStorage.getItem('dp_mcq_layout');
-    return saved as 'single' | 'double' | 'quad' || 'single';
-  }); // A,B,C,D in 1, 2, or 4 lines
-  const [mcqSpacing, setMcqSpacing] = useState<'none' | 'one'>(() => {
-    const saved = localStorage.getItem('dp_mcq_spacing');
-    return saved as 'none' | 'one' || 'none';
-  }); // No space or one enter space
+  const [mcqLayout, setMcqLayout] = useState<'single' | 'double' | 'quad'>('quad'); // 1 option per line
+  const [mcqSpacing, setMcqSpacing] = useState<'none' | 'one'>('none'); // No space or one enter space
 
   useEffect(() => {
     localStorage.setItem('dp_base_layout', baseLayout.toString());
@@ -475,10 +456,7 @@ function App() {
   useEffect(() => {
     localStorage.setItem('dp_mcq_spacing', mcqSpacing);
   }, [mcqSpacing]);
-  const [mcqStyle, setMcqStyle] = useState<number>(() => {
-    const saved = localStorage.getItem('dp_default_mcq_style');
-    return saved ? parseInt(saved) : 0;
-  });
+  const [mcqStyle, setMcqStyle] = useState<number>(1); // Round
   const [paperStyles, setPaperStyles] = useState<{
     mcq: number | string;
     tf: number | string;
@@ -491,37 +469,18 @@ function App() {
     matching: string;
     cloze: number | string;
     doubleMcq: number | string;
-  }>(() => {
-    try {
-      const saved = localStorage.getItem('dp_paper_styles_v2');
-      return saved ? JSON.parse(saved) : {
-        mcq: 0,
-        tf: 0,
-        correctIncorrect: 3, // Default to Design 4
-        vocabulary: 0,
-        circle: 0,
-        sentenceCompletion: 0,
-        wordBox: 0,
-        readingPassage: 0,
-        matching: 'classic',
-        cloze: 0,
-        doubleMcq: 0
-      };
-    } catch {
-      return {
-        mcq: 0,
-        tf: 0,
-        correctIncorrect: 3, // Default to Design 4
-        vocabulary: 0,
-        circle: 0,
-        sentenceCompletion: 0,
-        wordBox: 0,
-        readingPassage: 0,
-        matching: 'classic',
-        cloze: 0,
-        doubleMcq: 0
-      };
-    }
+  }>({
+    mcq: 0,
+    tf: 4, // ( T / F ) at Beginning
+    correctIncorrect: 3, // ( C / I ) at Beginning
+    vocabulary: 0,
+    circle: 0,
+    sentenceCompletion: 0,
+    wordBox: 0,
+    readingPassage: 0,
+    matching: 'boxed', // Default to Boxed answer
+    cloze: 0,
+    doubleMcq: 0
   });
 
   useEffect(() => {
@@ -1258,10 +1217,12 @@ ${customHtml}
                       paperStyles.tf === 1 ? "Put an underscore line before the number: ____ 1. Statement." :
                       paperStyles.tf === 2 ? "Put a checkbox before the number: [ ] 1. Statement." :
                       paperStyles.tf === 3 ? "Put 'True / False' labels on a new line under the statement." :
+                      paperStyles.tf === 4 ? "Put ( T / F ) at the BEGINNING of each statement (e.g., ( T / F ) 1. Statement)." :
                       "Custom T/F style " + (typeof paperStyles.tf === 'number' ? paperStyles.tf + 1 : paperStyles.tf))}
 - Correct/Incorrect Style: ${getStyleInstruction('correctIncorrect', paperStyles.correctIncorrect, paperStyles.correctIncorrect === 0 ? "Put a checkbox [ ] before the number (e.g., [ ] 1. Sentence). DO NOT use underscores." : 
                              paperStyles.correctIncorrect === 1 ? "Put ( C / I ) at the VERY END of each statement (e.g., 1. Sentence ( C / I ))." :
                              paperStyles.correctIncorrect === 2 ? "Put 'Correct / Incorrect' labels on a new line under the statement." :
+                             paperStyles.correctIncorrect === 3 ? "Put ( C / I ) at the BEGINNING of each statement (e.g., ( C / I ) 1. Sentence)." :
                              "Custom C/I style " + (typeof paperStyles.correctIncorrect === 'number' ? paperStyles.correctIncorrect + 1 : paperStyles.correctIncorrect))}
 - Vocabulary Style: ${getStyleInstruction('vocabulary', paperStyles.vocabulary, paperStyles.vocabulary === 0 ? "Classic Fill-in-the-blank (e.g., 1. Word   __: Definition). Use a 2-column borderless table to align the blanks and definitions." : 
                        paperStyles.vocabulary === 1 ? "Alternating Rows (Italicized words on left, definitions on right). Use a 2-column borderless table." :
@@ -1488,6 +1449,7 @@ ${customHtml}
     const selectedHeader = headerDesigns[paperDesign % headerDesigns.length];
 
     const mcqLayoutInstruction = `[MCQ LAYOUT - ABSOLUTE MANDATORY]: For Multiple Choice Questions, you MUST format the options (A, B, C, D) using an HTML <table> with the class "options-table". 
+    MANDATORY: Generate exactly 15 items for each MCQ section if possible.
     THIS RULE OVERRIDES ANY OTHER MCQ FORMATTING RULE.
     ${mcqLayout === 'single' ? '- ONE LINE: Create a <table> with 1 row and 4 columns. Row 1: [A, B, C, D].' : 
       mcqLayout === 'double' ? '- TWO LINES: Create a <table> with 2 rows and 2 columns. Row 1: [A, B], Row 2: [C, D]. (This ensures A and C are vertically aligned in the first column).' : 
@@ -1985,7 +1947,7 @@ ${componentLogic}
 
   return (
     <ErrorBoundary>
-      <div className="flex h-screen overflow-hidden text-slate-300 relative transition-all duration-500 bg-slate-900">
+      <div className="flex h-screen overflow-hidden text-slate-900 relative transition-all duration-500 bg-slate-50">
         {firebaseError && (
           <div className="fixed top-0 left-0 right-0 z-[1000] bg-rose-600 text-white px-4 py-2 text-center text-xs font-bold animate-in slide-in-from-top duration-500">
             <i className="fa-solid fa-circle-exclamation mr-2"></i>
@@ -2133,7 +2095,7 @@ ${componentLogic}
               />
             )}
             {/* Top Navigation Bar */}
-            <header className="h-20 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-4 lg:px-8 flex items-center justify-between shrink-0 relative z-10 overflow-x-auto no-scrollbar">
+            <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 lg:px-8 flex items-center justify-between shrink-0 relative z-10 overflow-x-auto no-scrollbar">
               <div className="flex items-center gap-4 lg:gap-6 min-w-max">
                 {!isSidebarOpen && (
                   <button onClick={() => setIsSidebarOpen(true)} className="h-10 w-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center text-slate-700 hover:text-orange-600 transition-all border border-white/30">
@@ -2179,13 +2141,16 @@ ${componentLogic}
                       className={`px-4 lg:px-6 py-2 rounded-lg text-[11px] font-bold flex items-center gap-2 transition-all whitespace-nowrap ${instructionRulerStyle > 0 ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-700 hover:bg-white/40'}`}
                     >
                       <i className="fa-solid fa-ruler-horizontal text-[10px]"></i> 
-                      {instructionRulerStyle === 0 ? 'Ruler: None' : 
-                       instructionRulerStyle === 1 ? 'Ruler: S1' :
-                       instructionRulerStyle === 2 ? 'Ruler: S2' :
-                       instructionRulerStyle === 3 ? 'Ruler: S3' :
-                       instructionRulerStyle === 4 ? 'Ruler: S4' :
-                       instructionRulerStyle === 5 ? 'Ruler: S5' :
-                       'Ruler: S6'}
+                      {instructionRulerStyle === 0 ? 'No Divider' : 
+                       instructionRulerStyle === 1 ? 'Divider: S1' :
+                       instructionRulerStyle === 2 ? 'Divider: S2' :
+                       instructionRulerStyle === 3 ? 'Divider: S3' :
+                       instructionRulerStyle === 4 ? 'Divider 4: Ruler S1' :
+                       instructionRulerStyle === 5 ? 'Divider: S5' :
+                       instructionRulerStyle === 6 ? 'Divider: S6' :
+                       instructionRulerStyle === 7 ? 'Divider: S7' :
+                       instructionRulerStyle === 8 ? 'Divider: S8' :
+                       'Divider: S9'}
                     </button>
                     <button 
                       onClick={() => setShowSettings(true)}
@@ -2243,20 +2208,14 @@ ${componentLogic}
             <div className="flex-1 overflow-y-auto p-8 no-scrollbar relative z-10">
               <div className="max-w-6xl mx-auto space-y-8">
                 {/* 3-Column Layout: Templates Left | Global Config | Templates Right */}
-                <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
-                  {/* Templates Left (Half) */}
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+                  {/* Templates Left (Full) */}
                   <div className="lg:col-span-1 space-y-4">
                     <div className="flex items-center justify-between px-2 mb-4">
                       <div className="flex items-center gap-2">
                         <div className="h-1 w-4 bg-orange-500 rounded-full"></div>
-                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Templates (A-M)</h3>
+                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Exercise Templates</h3>
                       </div>
-                      <button 
-                        onClick={handleAddCustomExerciseType}
-                        className="h-7 px-3 bg-slate-100 text-slate-600 rounded-lg text-[9px] font-bold uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center gap-2"
-                      >
-                        <i className="fa-solid fa-plus"></i> ADD NEW TYPE
-                      </button>
                     </div>
                     <div className="space-y-3">
                       {instructionTemplates
@@ -2270,7 +2229,6 @@ ${componentLogic}
                           if (bIdx !== -1) return 1;
                           return 0;
                         })
-                        .slice(0, Math.ceil(instructionTemplates.filter(t => t.category?.toUpperCase() === activeModule.toUpperCase()).length / 2))
                         .map((t, idx) => {
                           const isSelected = selectedInstructionIds.includes(t.id);
                           const cat = t.category?.toUpperCase();
@@ -2448,59 +2406,6 @@ ${componentLogic}
                           </div>
                         )}
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Templates Right (Half) */}
-                  <div className="lg:col-span-1 space-y-4">
-                    <div className="flex items-center justify-between px-2 mb-4">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Templates (N-Z)</h3>
-                        <div className="h-1 w-4 bg-orange-500 rounded-full"></div>
-                      </div>
-                      <button 
-                        onClick={handleAddCustomExerciseType}
-                        className="h-7 px-3 bg-slate-100 text-slate-600 rounded-lg text-[9px] font-bold uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center gap-2"
-                      >
-                        <i className="fa-solid fa-plus"></i> ADD NEW TYPE
-                      </button>
-                    </div>
-                    <div className="space-y-3">
-                      {instructionTemplates
-                        .filter(t => t.category?.toUpperCase() === activeModule.toUpperCase())
-                        .sort((a, b) => {
-                          const order = ['g_mcq', 'g_correct_incorrect', 'g_circle', 'g_best_rewrite', 'g_complete_sentences', 'g_pair', 'g_spelling'];
-                          const aIdx = order.indexOf(a.id);
-                          const bIdx = order.indexOf(b.id);
-                          if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
-                          if (aIdx !== -1) return -1;
-                          if (bIdx !== -1) return 1;
-                          return 0;
-                        })
-                        .slice(Math.ceil(instructionTemplates.filter(t => t.category?.toUpperCase() === activeModule.toUpperCase()).length / 2))
-                        .map((t, idx) => {
-                          const isSelected = selectedInstructionIds.includes(t.id);
-                          const cat = t.category?.toUpperCase();
-                          const colorClass = cat === 'VOCABULARY' ? 'emerald' : cat === 'READING' ? 'blue' : 'orange';
-                          
-                          return (
-                            <div
-                              key={idx}
-                              className={`group bg-white border rounded-2xl p-4 flex items-center justify-between hover:border-${colorClass}-200 hover:shadow-md transition-all cursor-pointer ${isSelected ? `border-${colorClass}-500 bg-${colorClass}-50/30` : 'border-slate-100'}`}
-                              onClick={() => toggleInstruction(t.id)}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className={`h-9 w-9 rounded-xl flex items-center justify-center transition-colors ${isSelected ? `bg-${colorClass}-600 text-white` : `bg-slate-50 text-slate-400 group-hover:bg-${colorClass}-50 group-hover:text-${colorClass}-500`}`}>
-                                  <i className="fa-solid fa-book text-sm"></i>
-                                </div>
-                                <span className={`text-[10px] font-bold uppercase tracking-tight ${isSelected ? 'text-slate-900' : 'text-slate-600 group-hover:text-slate-900'}`}>{t.label}</span>
-                              </div>
-                              <div className={`h-6 w-6 rounded-lg border flex items-center justify-center transition-all ${isSelected ? `bg-${colorClass}-600 border-${colorClass}-600 text-white` : `border-slate-100 text-slate-300 group-hover:border-${colorClass}-500 group-hover:text-${colorClass}-500`}`}>
-                                <i className={`fa-solid ${isSelected ? 'fa-check' : 'fa-plus'} text-[10px]`}></i>
-                              </div>
-                            </div>
-                          );
-                        })}
                     </div>
                   </div>
                 </div>
@@ -4804,7 +4709,7 @@ ${componentLogic}
                       />
                     </div>
                     <div className="space-y-4">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Header Ruler Style</label>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Header Divider Style</label>
                       <div className="flex bg-white p-1.5 rounded-2xl gap-1 overflow-x-auto no-scrollbar border border-slate-200 shadow-sm">
                         {[0, 1, 2, 3, 4, 5, 6].map(style => (
                           <button 
@@ -4812,7 +4717,7 @@ ${componentLogic}
                             onClick={() => setBrandSettings({ ...brandSettings, headerRulerStyle: style })} 
                             className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all shrink-0 ${brandSettings.headerRulerStyle === style ? 'bg-orange-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                           >
-                            {style === 0 ? 'None' : `Ruler ${style}`}
+                            {style === 0 ? 'None' : `Divider ${style}`}
                           </button>
                         ))}
                       </div>
@@ -5935,11 +5840,11 @@ ${componentLogic}
                           <input value={brandSettings.customHeaderText || ''} onChange={e => setBrandSettings({ ...brandSettings, customHeaderText: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 outline-none focus:border-orange-500 font-bold text-slate-700" placeholder="e.g. FINAL TERM EXAMINATION - SEMESTER 1" />
                         </div>
                         <div className="space-y-4">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Header Ruler Style</label>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Header Divider Style</label>
                           <div className="flex bg-slate-100 p-1.5 rounded-2xl gap-1 overflow-x-auto no-scrollbar">
                             {[0, 1, 2, 3, 4, 5, 6].map(style => (
                               <button key={style} onClick={() => setBrandSettings({ ...brandSettings, headerRulerStyle: style })} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all shrink-0 ${brandSettings.headerRulerStyle === style ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-400'}`}>
-                                {style === 0 ? 'None' : `Ruler ${style}`}
+                                {style === 0 ? 'None' : `Divider ${style}`}
                               </button>
                             ))}
                           </div>
