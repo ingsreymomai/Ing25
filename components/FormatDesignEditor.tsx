@@ -155,46 +155,6 @@ const FormatDesignEditor: React.FC<FormatDesignEditorProps> = ({ onSave, current
       {/* MS Word Ribbon */}
       {showRibbon && (
         <div className="bg-white border-b border-slate-200 shrink-0">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 py-2 bg-slate-50 border-b border-slate-200 gap-2">
-            <div className="flex items-center gap-3">
-              <div className="flex flex-col gap-1">
-                <input 
-                  type="text" 
-                  value={designName} 
-                  onChange={(e) => setDesignName(e.target.value)}
-                  className="text-[10px] font-black uppercase text-slate-900 bg-white border border-slate-200 rounded px-2 py-1 focus:ring-1 focus:ring-blue-500 outline-none w-40"
-                  placeholder="Design Name"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <select 
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value as RuleCategory)}
-                  className="text-[8px] font-bold text-slate-600 bg-white border border-slate-200 rounded px-2 py-1 uppercase cursor-pointer outline-none"
-                >
-                  {['General', 'Grammar', 'Vocabulary', 'Reading', 'Mixed', 'Custom', 'mcq', 'tf', 'correct_incorrect', 'vocabulary', 'circle', 'sentence_completion', 'word_box', 'reading_passage', 'matching', 'cloze', 'double_mcq'].map(cat => (
-                    <option key={cat} value={cat}>{cat.replace('_', ' ').toUpperCase()} Category</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <button 
-              onClick={() => onSave({ 
-                name: designName, 
-                category: selectedCategory, 
-                style: { 
-                  fontFamily, fontSize, textColor, fontWeight, textDecoration,
-                  columns, backgroundColor, containerPadding, containerMargin, containerBorderRadius,
-                  textBlockBg, textBlockPadding, textBlockBorder,
-                  showTable, tablePadding, tableBorderWidth, tableBorderColor, tableBorderStyle,
-                  tableData, cellAlignments, customCSS, showImages, editableContent
-                } 
-              })}
-              className="px-6 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all whitespace-nowrap"
-            >
-              <i className="fa-solid fa-save mr-2"></i> Save Design
-            </button>
-          </div>
           <div className="flex px-4 pt-1 gap-1 bg-slate-50">
             {['FILE', 'HOME', 'INSERT', 'LAYOUT', 'ADVANCED'].map((tab) => (
               <button
@@ -363,6 +323,45 @@ const FormatDesignEditor: React.FC<FormatDesignEditorProps> = ({ onSave, current
                 </div>
               </div>
             )}
+
+            <div className="flex-1"></div>
+            
+            <div className="flex items-center gap-3 bg-slate-50 p-2 rounded-2xl border border-slate-200">
+              <div className="flex flex-col gap-1">
+                <input 
+                  type="text" 
+                  value={designName} 
+                  onChange={(e) => setDesignName(e.target.value)}
+                  className="text-[10px] font-black uppercase text-slate-900 bg-transparent border-none focus:ring-0 p-0 w-40"
+                  placeholder="Design Name"
+                />
+                <select 
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value as RuleCategory)}
+                  className="text-[8px] font-bold text-slate-400 bg-transparent border-none focus:ring-0 p-0 uppercase cursor-pointer"
+                >
+                  {['General', 'Grammar', 'Vocabulary', 'Reading', 'Mixed', 'Custom', 'mcq', 'tf', 'correct_incorrect', 'vocabulary', 'circle', 'sentence_completion', 'word_box', 'reading_passage', 'matching', 'cloze', 'double_mcq'].map(cat => (
+                    <option key={cat} value={cat}>{cat.replace('_', ' ').toUpperCase()} Category</option>
+                  ))}
+                </select>
+              </div>
+              <button 
+                onClick={() => onSave({ 
+                  name: designName, 
+                  category: selectedCategory, 
+                  style: { 
+                    fontFamily, fontSize, textColor, fontWeight, textDecoration,
+                    columns, backgroundColor, containerPadding, containerMargin, containerBorderRadius,
+                    textBlockBg, textBlockPadding, textBlockBorder,
+                    showTable, tablePadding, tableBorderWidth, tableBorderColor, tableBorderStyle,
+                    tableData, cellAlignments, customCSS, showImages, editableContent
+                  } 
+                })}
+                className="px-6 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all"
+              >
+                <i className="fa-solid fa-save mr-2"></i> Save Design
+              </button>
+            </div>
           </div>
         </div>
       )}

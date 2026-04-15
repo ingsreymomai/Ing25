@@ -1258,7 +1258,6 @@ ${customHtml}
     
     const paperStylesInstruction = `
 [PAPER STYLE ARCHITECT]:
-[CRITICAL OVERRIDE]: The styles defined in this PAPER STYLE ARCHITECT section MUST OVERRIDE any conflicting formatting instructions found in the individual exercise prompts. The Paper Style is the absolute final authority on formatting. For example, if the exercise prompt asks for "___" but the Paper Style asks for "[ ]", you MUST use "[ ]". If the exercise prompt asks to write "C or I" but the Paper Style asks to choose "( C / I )", you MUST follow the Paper Style.
 - MCQ Style: ${getStyleInstruction('mcq', paperStyles.mcq, paperStyles.mcq === 0 ? "Standard A, B, C, D with period." : 
                 paperStyles.mcq === 1 ? "Underscore prefix before number (e.g., ___ 1. Question)." :
                 paperStyles.mcq === 2 ? "Boxed letters [A] [B] [C] [D]." :
@@ -1627,14 +1626,6 @@ ${customHtml}
             - Every <td> MUST have a bottom border: 1pt solid #334155; padding: 10px;
             - This creates horizontal lines between every question.)`;
         }
-      } else {
-        const customTable = customDesigns.find(d => d.id === effectiveTableStyle);
-        if (customTable && customTable.prompt) {
-          formatInstruction = `(MANDATORY FORMAT: ${customTable.prompt}
-            ${isPartBackgroundEnabled ? 'MANDATORY: Apply a unique background style class from the PART BACKGROUND PROTOCOL to this <table> tag.' : ''}
-            - Row 1: Header row spanning all columns, with ${headerStyle}. Title: "PART ${String.fromCharCode(65 + idx)}: ${t.professionalLabel || t.label}".
-            - Distribute the ${overrideItems} items according to the custom table style.)`;
-        }
       }
         
       const rawHeader = t.professionalLabel || t.label;
@@ -1728,10 +1719,6 @@ ${componentLogic}
       // 1. Call the AI Brain
       const result = await callNeuralEngine(activeEngine, finalLogic, protocolsPrompt, sourceMaterial, externalKeys);
       
-      if (!result || !result.text) {
-        throw new Error("The AI engine returned an empty response. Please try again or switch to a different engine.");
-      }
-
       if (result.text.includes('Error:')) {
         setGenerationError(result.text);
         setIsGenerating(false);
@@ -1771,9 +1758,12 @@ ${componentLogic}
 
       // 4. SEND TO THE CLOUD (The Magic Step!)
       if (auth.currentUser) {
-        setDoc(doc(db, 'history', newTestItem.id), newTestItem)
-          .then(() => console.log("✅☁️ Test successfully saved to the Firebase Cloud Notebook!"))
-          .catch(e => console.error("Cloud save failed (this won't stop your test from generating):", e));
+        try {
+             await setDoc(doc(db, 'history', newTestItem.id), newTestItem);
+             console.log("✅☁️ Test successfully saved to the Firebase Cloud Notebook!");
+        } catch (e) {
+             handleFirestoreError(e, OperationType.WRITE, `history/${newTestItem.id}`);
+        }
       }
     } catch (error: any) {
       console.error("Generation failed:", error);
@@ -2516,19 +2506,12 @@ ${componentLogic}
                       )}
 
                       {generationError && (
-                        <div className="fixed inset-0 bg-white/95 backdrop-blur-md flex flex-col items-center justify-center z-[9999] p-10">
+                        <div className="absolute inset-0 bg-white/95 backdrop-blur-md flex flex-col items-center justify-center z-30 p-10">
                           <div className="h-16 w-16 bg-red-50 rounded-full flex items-center justify-center text-red-600 mb-6 shadow-xl shadow-red-600/10">
                             <i className="fa-solid fa-triangle-exclamation text-2xl"></i>
                           </div>
                           <h4 className="text-sm font-bold text-slate-800 mb-2">Neural Synthesis Failed</h4>
-                          <p className="text-xs text-slate-400 max-w-[280px] leading-relaxed mb-4">The AI engine encountered an issue. This could be due to a complex prompt or temporary service interruption.</p>
-                          <div className="bg-red-50 border border-red-100 text-red-600 text-[10px] p-3 rounded-lg max-w-[280px] w-full mb-8 overflow-auto max-h-24 text-left font-mono">
-                            {generationError.includes('<div') ? (
-                              <div dangerouslySetInnerHTML={{ __html: generationError }} />
-                            ) : (
-                              generationError
-                            )}
-                          </div>
+                          <p className="text-xs text-slate-400 max-w-[280px] leading-relaxed mb-8">The AI engine encountered an issue. This could be due to a complex prompt or temporary service interruption.</p>
                           <div className="flex gap-4">
                             <button onClick={() => setGenerationError(null)} className="px-6 py-3 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-slate-200 transition-all">Dismiss</button>
                             <button onClick={handleGenerate} className="px-6 py-3 bg-orange-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-orange-700 shadow-lg shadow-orange-600/20 transition-all flex items-center gap-2">
@@ -3242,20 +3225,6 @@ ${componentLogic}
                     iconColor="text-purple-600"
                     isCollapsed={!!collapsedSections['table_styles']}
                     onToggle={() => setCollapsedSections(prev => ({ ...prev, table_styles: !prev.table_styles }))}
-                    rightElement={
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDesignTargetTypeId('table_style');
-                          setEditingCustomDesignId(null);
-                          setSettingsTab('FORMAT_DESIGN');
-                          setShowSettings(true);
-                        }}
-                        className="px-4 py-2 bg-purple-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-purple-700 transition-all flex items-center gap-2"
-                      >
-                        <i className="fa-solid fa-plus"></i> Add NEW
-                      </button>
-                    }
                   >
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
                       {[
@@ -3276,51 +3245,6 @@ ${componentLogic}
                           </div>
                           <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight mb-2">{style.name}</h4>
                           <p className="text-xs font-medium text-slate-500 leading-relaxed">{style.desc}</p>
-                        </div>
-                      ))}
-                      
-                      {/* Custom Table Styles */}
-                      {customDesigns.filter(d => d.type === 'table_style').map(design => (
-                        <div 
-                          key={design.id}
-                          onClick={() => setTableStyle(design.id)}
-                          className={`p-8 rounded-[40px] border-2 cursor-pointer transition-all relative group ${tableStyle === design.id ? 'border-purple-500 bg-purple-50/30 shadow-xl scale-[1.02]' : 'border-slate-100 bg-white hover:border-purple-200 shadow-sm'}`}
-                        >
-                          <div className="flex justify-between items-start mb-6">
-                            <div className={`h-14 w-14 rounded-2xl flex items-center justify-center text-2xl ${tableStyle === design.id ? 'bg-purple-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
-                              <i className="fa-solid fa-table-columns"></i>
-                            </div>
-                            <div className="flex gap-2">
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingCustomDesignId(design.id);
-                                  setSettingsTab('FORMAT_DESIGN');
-                                  setShowSettings(true);
-                                }}
-                                className="h-8 w-8 bg-white text-slate-400 rounded-full flex items-center justify-center shadow-sm hover:text-blue-600 hover:bg-blue-50 transition-all opacity-0 group-hover:opacity-100"
-                              >
-                                <i className="fa-solid fa-pen text-xs"></i>
-                              </button>
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (confirm('Delete this custom table style?')) {
-                                    const newDesigns = customDesigns.filter(d => d.id !== design.id);
-                                    setCustomDesigns(newDesigns);
-                                    localStorage.setItem('dp_custom_designs_v46', JSON.stringify(newDesigns));
-                                    if (tableStyle === design.id) setTableStyle('plain');
-                                  }
-                                }}
-                                className="h-8 w-8 bg-white text-slate-400 rounded-full flex items-center justify-center shadow-sm hover:text-red-600 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
-                              >
-                                <i className="fa-solid fa-trash text-xs"></i>
-                              </button>
-                              {tableStyle === design.id && <div className="h-8 w-8 bg-purple-500 text-white rounded-full flex items-center justify-center shadow-lg animate-in zoom-in"><i className="fa-solid fa-check"></i></div>}
-                            </div>
-                          </div>
-                          <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight mb-2">Custom: {design.name}</h4>
-                          <p className="text-xs font-medium text-slate-500 leading-relaxed italic">Custom formatting applied.</p>
                         </div>
                       ))}
                     </div>
@@ -5528,7 +5452,7 @@ ${componentLogic}
       {showSettings && (
         <div className={`fixed inset-0 z-[250] bg-slate-950/80 backdrop-blur-2xl flex items-center justify-center ${isSettingsFullScreen ? 'p-0' : 'p-4'}`}>
           <div className={`bg-[#f8fafc] bg-[radial-gradient(circle_at_top_right,rgba(234,88,12,0.03),transparent_40%),radial-gradient(circle_at_bottom_left,rgba(37,99,235,0.03),transparent_40%)] overflow-hidden shadow-2xl flex flex-col border border-white/50 transition-all duration-500 ${isSettingsFullScreen ? 'w-full h-full rounded-none' : 'rounded-[48px] lg:rounded-[64px] w-full max-w-4xl h-full max-h-[75vh]'}`}>
-             <div className={`${settingsTab === 'FORMAT_DESIGN' ? 'hidden' : 'p-8 lg:p-12 pb-4'} flex justify-between items-center`}>
+             <div className={`${isSettingsFullScreen && settingsTab === 'FORMAT_DESIGN' ? 'hidden' : 'p-8 lg:p-12 pb-4'} flex justify-between items-center`}>
                <div className="flex items-center gap-4">
                  <div className="h-4 w-4 bg-orange-600 rounded-full animate-pulse"></div>
                  <h2 className="text-[12px] font-black uppercase text-slate-900 tracking-widest">Workspace Control Node</h2>
@@ -5544,36 +5468,28 @@ ${componentLogic}
                  <button onClick={() => setShowSettings(false)} className="h-10 w-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900"><i className="fa-solid fa-xmark text-xl"></i></button>
                </div>
              </div>
-             <div className={`${settingsTab === 'FORMAT_DESIGN' ? 'absolute bottom-4 left-1/2 -translate-x-1/2 z-[300]' : 'px-6 lg:px-12 mb-8'}`}>
-               <div className={`flex bg-slate-100/70 p-1 rounded-[32px] gap-1 overflow-x-auto no-scrollbar shadow-inner ${settingsTab === 'FORMAT_DESIGN' ? 'scale-90 origin-bottom opacity-50 hover:opacity-100 transition-opacity backdrop-blur-md bg-white/80 border border-slate-200' : ''}`}>
+             <div className={`${isSettingsFullScreen && settingsTab === 'FORMAT_DESIGN' ? 'fixed top-2 left-4 z-[300]' : 'px-6 lg:px-12 mb-8'}`}>
+               <div className={`flex bg-slate-100/70 p-1 rounded-[32px] gap-1 overflow-x-auto no-scrollbar shadow-inner ${isSettingsFullScreen && settingsTab === 'FORMAT_DESIGN' ? 'scale-75 origin-left opacity-50 hover:opacity-100 transition-opacity' : ''}`}>
                  {['COMMAND', 'ACCOUNT', 'ENGINE', 'BACKBONE LOGIC', 'DESIGN', 'FORMAT_DESIGN', 'LOGO'].map(tab => (
                    <button 
                      key={tab} 
                      onClick={() => setSettingsTab(tab as SettingsTab)} 
-                     className={`px-4 lg:px-6 py-2 rounded-[28px] text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${settingsTab === tab ? 'bg-orange-600 text-white shadow-xl' : 'text-slate-400 hover:text-slate-600'}`}
+                     className={`px-4 lg:px-6 py-2 rounded-[28px] text-[9px] font-black uppercase tracking-widest transition-all ${settingsTab === tab ? 'bg-orange-600 text-white shadow-xl' : 'text-slate-400 hover:text-slate-600'}`}
                    >
                      {tab === 'FORMAT_DESIGN' ? 'DESIGN TEST FORMAT' : tab.replace('_', ' ')}
                    </button>
                  ))}
                </div>
              </div>
-             {settingsTab === 'FORMAT_DESIGN' && (
-               <div className="absolute top-4 right-4 z-[300] flex items-center gap-2">
-                 <button 
-                   onClick={() => setIsSettingsFullScreen(!isSettingsFullScreen)} 
-                   className="h-10 w-10 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 shadow-lg"
-                 >
-                   <i className={`fa-solid ${isSettingsFullScreen ? 'fa-compress' : 'fa-expand'}`}></i>
-                 </button>
-                 <button 
-                   onClick={() => setShowSettings(false)} 
-                   className="h-10 w-10 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 shadow-lg"
-                 >
-                   <i className="fa-solid fa-xmark text-xl"></i>
-                 </button>
-               </div>
+             {isSettingsFullScreen && settingsTab === 'FORMAT_DESIGN' && (
+               <button 
+                 onClick={() => setShowSettings(false)} 
+                 className="fixed top-4 right-4 z-[300] h-10 w-10 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-slate-400 hover:text-slate-900 shadow-lg"
+               >
+                 <i className="fa-solid fa-xmark text-xl"></i>
+               </button>
              )}
-             <div className={`flex-1 overflow-y-auto ${settingsTab === 'FORMAT_DESIGN' ? 'px-2 pb-2 pt-16' : 'px-6 lg:px-12 pb-12'} space-y-12 no-scrollbar`}>
+             <div className={`flex-1 overflow-y-auto ${isSettingsFullScreen && settingsTab === 'FORMAT_DESIGN' ? 'px-2 pb-2' : 'px-6 lg:px-12 pb-12'} space-y-12 no-scrollbar`}>
                 {settingsTab === 'FORMAT_DESIGN' && (
                   <div className="h-full min-h-[600px] animate-in fade-in slide-in-from-bottom-6">
                     <FormatDesignEditor 
@@ -5608,19 +5524,13 @@ ${componentLogic}
                         if (normalizedType === 'cloze') normalizedType = 'cloze';
                         if (normalizedType === 'double_mcq') normalizedType = 'doubleMcq';
 
-                        let generatedPrompt = `Apply custom design format for ${design.category}`;
-                        if (normalizedType === 'table_style') {
-                          const s = design.style;
-                          generatedPrompt = `Use a real HTML <table> with ${s.columns} columns. The table MUST have background-color: ${s.backgroundColor}; border: ${s.tableBorderWidth}px ${s.tableBorderStyle} ${s.tableBorderColor}; border-radius: ${s.containerBorderRadius}px; padding: ${s.containerPadding}px; margin: ${s.containerMargin}px. Every <td> MUST have padding: ${s.tablePadding}px; border: ${s.tableBorderWidth}px ${s.tableBorderStyle} ${s.tableBorderColor}; text-align: left. The text MUST have font-family: ${s.fontFamily}; font-size: ${s.fontSize}px; color: ${s.textColor}; font-weight: ${s.fontWeight}; text-decoration: ${s.textDecoration}.`;
-                        }
-
                         if (editingCustomDesignId) {
                           const updatedDesign = {
                             ...customDesigns.find(d => d.id === editingCustomDesignId)!,
                             name: design.name,
                             category: design.category,
                             style: design.style,
-                            prompt: generatedPrompt
+                            prompt: `Apply custom design format for ${design.category}`
                           };
                           setCustomDesigns(prev => prev.map(d => d.id === editingCustomDesignId ? updatedDesign : d));
                           
@@ -5641,7 +5551,7 @@ ${componentLogic}
                             type: normalizedType,
                             category: design.category,
                             style: design.style,
-                            prompt: generatedPrompt,
+                            prompt: `Apply custom design format for ${design.category}`,
                             uid: auth.currentUser?.uid || 'anonymous'
                           };
                           
