@@ -632,6 +632,24 @@ export const DEFAULT_MASTER_PROTOCOLS: StrictRule[] = [
     active: true,
     priority: 'Medium',
     category: 'General'
+  },
+  {
+    id: 'mp-custom-exercise-logic',
+    label: 'CUSTOM EXERCISE ADAPTATION',
+    description: 'Ensures AI can handle user-defined exercise types.',
+    promptInjection: 'CUSTOM EXERCISES: If an exercise type is not standard (e.g., user-added), analyze its label and professional label to determine the best pedagogical format. Apply standard formatting (nested tables for MCQs, long blanks for writing) where appropriate.',
+    active: true,
+    priority: 'High',
+    category: 'General'
+  },
+  {
+    id: 'mp-reading-uniqueness',
+    label: 'READING: ABSOLUTE PASSAGE UNIQUENESS',
+    description: 'Forces unique reading passages for every reading exercise.',
+    promptInjection: 'STRICT UNIQUENESS: Every single reading exercise MUST have its own unique reading passage. NEVER reuse the same text for multiple exercises in the same test. Each passage must be distinct in content and theme.',
+    active: true,
+    priority: 'High',
+    category: 'Reading'
   }
 ];
 
